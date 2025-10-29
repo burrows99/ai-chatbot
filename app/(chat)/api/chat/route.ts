@@ -36,6 +36,7 @@ import {
   saveChat,
   saveMessages,
   updateChatLastContextById,
+  getUserById,
 } from "@/lib/db/queries";
 import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
@@ -111,6 +112,14 @@ export async function POST(request: Request) {
 
     if (!session?.user) {
       return new ChatSDKError("unauthorized:chat").toResponse();
+    }
+
+    const userExists = await getUserById(session.user.id);
+    if (!userExists) {
+      return new ChatSDKError(
+        "unauthorized:chat",
+        "Session is stale. Please sign in again."
+      ).toResponse();
     }
 
     const userType: UserType = session.user.type;

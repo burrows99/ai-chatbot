@@ -1,0 +1,59 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Next.js: Debug server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--inspect=9229"],
+      "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
+      "args": ["dev", "--turbo"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env.local",
+      "skipFiles": ["<node_internals>/ "],
+      "autoAttachChildProcesses": true
+    },
+    {
+      "type": "pwa-chrome",
+      "request": "launch",
+      "name": "Chrome: Debug client",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Playwright: Debug tests",
+      "runtimeExecutable": "pnpm",
+      "args": ["exec", "playwright", "test", "--debug"],
+      "cwd": "${workspaceFolder}",
+      "env": { "PLAYWRIGHT": "True" },
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug TSX script (current file)",
+      "runtimeExecutable": "pnpm",
+      "args": ["exec", "tsx", "${file}"],
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/ "]
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach: Next.js server (9229)",
+      "port": 9229,
+      "restart": true,
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Next.js: Full‑stack (server + client)",
+      "configurations": ["Next.js: Debug server", "Chrome: Debug client"]
+    }
+  ]
+}
