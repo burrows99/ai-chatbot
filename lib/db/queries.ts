@@ -591,3 +591,12 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     );
   }
 }
+
+export async function getUserById(id: string): Promise<User | null> {
+  try {
+    const [u] = await db.select().from(user).where(eq(user.id, id)).limit(1);
+    return u ?? null;
+  } catch (_error) {
+    throw new ChatSDKError("bad_request:database", "Failed to get user by id");
+  }
+}
