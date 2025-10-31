@@ -28,10 +28,9 @@ type AIContextData = {
 // Context methods
 type AIContextMethods = {
   setArtifactData: (artifactType: string, id: string, value: any) => void;
-  setArtifactSelection: (artifactType: string, id: string, value: any) => void;
-  getArtifactData: (artifactType: string, id: string) => any;
-  getArtifactSelection: (artifactType: string, id: string) => any;
+  getArtifactData: (artifactType: string) => any;
   getContextAsJson: () => string;
+  contextData: AIContextData,
 };
 
 // Combined context interface
@@ -69,37 +68,8 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const setArtifactSelection = (
-    artifactType: string,
-    id: string,
-    value: any
-  ) => {
-    setContextData((prev) => ({
-      ...prev,
-      artifact: {
-        ...prev.artifact,
-        [artifactType]: {
-          ...prev.artifact[artifactType],
-          data: prev.artifact[artifactType]?.data || {},
-          selections: {
-            ...prev.artifact[artifactType]?.selections,
-            [id]: value,
-          },
-        },
-      },
-    }));
-  };
-
-  const getArtifactData = (artifactType: string, id: string) => {
-    const artifactData = contextData.artifact[artifactType]?.data;
-    if (artifactData && artifactData.documentId === id) {
-      return artifactData;
-    }
-    return null;
-  };
-
-  const getArtifactSelection = (artifactType: string, id: string) => {
-    return contextData.artifact[artifactType]?.selections[id];
+  const getArtifactData = (artifactType: string) => {
+    return contextData.artifact[artifactType]?.data?.content?.data;
   };
 
   const getContextAsJson = () => {
@@ -109,10 +79,9 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
   const contextValue: AIContextValue = {
     ...contextData,
     setArtifactData,
-    setArtifactSelection,
     getArtifactData,
-    getArtifactSelection,
     getContextAsJson,
+    contextData,
   };
 
   return (
