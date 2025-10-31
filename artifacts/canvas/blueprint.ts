@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/useMaxParams: <explanation> */
 export type FieldTypeName = "text" | "textarea" | "date" | "dropdown";
 
 type BaseFieldType = {
@@ -30,7 +31,7 @@ export type FieldType =
   | DropdownFieldType;
 
 export type FieldConfig = {
-  readonly name: string;
+  readonly apiName: string;
   readonly value: string;
   readonly label: string;
   readonly type: FieldType;
@@ -61,35 +62,35 @@ export const fieldTypes = {
   } satisfies DropdownFieldType,
 } as const;
 
-export const createTextField = (name = "", value = "", label = "") => ({
-  name,
+export const createTextField = (apiName = "", value = "", label = "") => ({
+  apiName,
   value,
   label,
   type: fieldTypes.text,
 });
 
-export const createTextareaField = (name = "", value = "", label = "") => ({
-  name,
+export const createTextareaField = (apiName = "", value = "", label = "") => ({
+  apiName,
   value,
   label,
   type: fieldTypes.textarea,
 });
 
-export const createDateField = (name = "", value = "", label = "") => ({
-  name,
+export const createDateField = (apiName = "", value = "", label = "") => ({
+  apiName,
   value,
   label,
   type: fieldTypes.date,
 });
 
 export const createDropdownField = (
-  name = "",
+  apiName = "",
   value = "",
   label = "",
   allowedValues = [] as readonly string[],
   defaultValue = ""
 ) => ({
-  name,
+  apiName,
   value,
   label,
   type: {
@@ -102,51 +103,39 @@ export const createDropdownField = (
 // Example data with proper typing
 export const exampleCanvasData: readonly CanvasData[] = [
   {
-    field1: createTextField(
-      "Name of field1",
-      "Sample text",
-      "Text Field"
-    ),
+    field1: createTextField("API Name of field1", "Sample text", "Text Field"),
     field2: createTextareaField(
-      "Name of field2",
+      "API Name of field2",
       "Sample textarea content",
       "Textarea Field"
     ),
     field3: createDropdownField(
-      "Name of field3",
+      "API Name of field3",
       "option1",
       "Dropdown Field",
       ["option1", "option2", "option3"],
       "option1"
     ),
-    field4: createDateField(
-      "Name of field4",
-      "2024-01-01",
-      "Date Field"
-    ),
+    field4: createDateField("API Name of field4", "2024-01-01", "Date Field"),
   },
   {
     field1: createTextField(
-      "Name of field1",
+      "API Name of field1",
       "Another text",
       "Text Field 2"
     ),
     field2: createTextareaField(
-      "Name of field2",
+      "API Name of field2",
       "Another textarea content",
       "Textarea Field 2"
     ),
     field3: createDropdownField(
-      "Name of field3",
+      "API Name of field3",
       "option2",
       "Dropdown Field 2",
       ["option1", "option2", "option3"],
       "option1"
     ),
-    field4: createDateField(
-      "Name of field4",
-      "2024-12-31",
-      "Date Field 2"
-    ),
+    field4: createDateField("API Name of field4", "2024-12-31", "Date Field 2"),
   },
 ] as const;

@@ -6,7 +6,7 @@ import { createDocumentHandler } from "@/lib/artifacts/server";
 
 // Schema that matches our blueprint structure
 const fieldValueSchema = z.object({
-  name: z.string(),
+  apiName: z.string(),
   value: z.union([z.string(), z.number(), z.boolean()]),
   label: z.string(),
   type: z.object({
