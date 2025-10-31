@@ -47,6 +47,7 @@ type AIContextMethods = {
     timestamp: number;
     metadata?: Record<string, any>;
   }>;
+  getContextAsJson: () => string;
 };
 
 // Combined context interface
@@ -141,6 +142,10 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     return contextData.chatHistory.messages;
   };
 
+  const getContextAsJson = () => {
+    return JSON.stringify(contextData, null, 2);
+  };
+
   const contextValue: AIContextValue = {
     ...contextData,
     setArtifactData,
@@ -149,6 +154,7 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     getArtifactSelection,
     addMessage,
     getMessages,
+    getContextAsJson,
   };
 
   return (
