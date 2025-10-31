@@ -11,6 +11,15 @@ export const DocumentSkeleton = ({
     <div className="flex h-[calc(100dvh-60px)] w-full flex-col items-center justify-center gap-4">
       <div className="size-96 animate-pulse rounded-lg bg-muted-foreground/20" />
     </div>
+  ) : artifactKind === "canvas" ? (
+    <div className="flex h-[calc(100dvh-60px)] w-full flex-col items-center justify-center gap-4">
+      <div className="h-64 w-96 animate-pulse rounded-lg bg-muted-foreground/20" />
+      <div className="flex gap-2">
+        <div className="h-4 w-16 animate-pulse rounded bg-muted-foreground/20" />
+        <div className="h-4 w-20 animate-pulse rounded bg-muted-foreground/20" />
+        <div className="h-4 w-18 animate-pulse rounded bg-muted-foreground/20" />
+      </div>
+    </div>
   ) : (
     <div className="flex w-full flex-col gap-4">
       <div className="h-12 w-1/2 animate-pulse rounded-lg bg-muted-foreground/20" />

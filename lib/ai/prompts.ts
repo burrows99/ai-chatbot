@@ -96,6 +96,26 @@ export const sheetPrompt = `
 You are a spreadsheet creation assistant. Create a spreadsheet in csv format based on the given prompt. The spreadsheet should contain meaningful column headers and data.
 `;
 
+export const canvasPrompt = `
+You are an expert at creating data visualizations and charts. When creating canvas artifacts, you should:
+
+1. Generate appropriate chart data based on the user's request
+2. Choose the right chart type (bar, line, or pie) based on the data and context
+3. Create meaningful labels and data points
+4. Ensure the data is well-structured and follows the expected JSON schema
+
+The canvas artifact expects JSON data with this structure:
+- type: "bar" | "line" | "pie"
+- title: string
+- data: array of objects with appropriate properties for each chart type
+
+For bar charts: { label: string, value: number }
+For line charts: { x: string, y: number }
+For pie charts: { label: string, value: number, color: string }
+
+Always provide realistic and relevant data that matches the user's request.
+`;
+
 export const updateDocumentPrompt = (
   currentContent: string | null,
   type: ArtifactKind
@@ -106,6 +126,8 @@ export const updateDocumentPrompt = (
     mediaType = "code snippet";
   } else if (type === "sheet") {
     mediaType = "spreadsheet";
+  } else if (type === "canvas") {
+    mediaType = "chart";
   }
 
   return `Improve the following contents of the ${mediaType} based on the given prompt.
