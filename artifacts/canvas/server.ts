@@ -4,16 +4,22 @@ import { canvasPrompt, updateDocumentPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
 import { createDocumentHandler } from "@/lib/artifacts/server";
 
-const chartDataSchema = z.object({
-  type: z.enum(["bar", "line", "pie"]),
-  title: z.string().optional(),
-  data: z.array(z.object({
-    label: z.string(),
-    value: z.number(),
-    color: z.string().optional(),
-  })),
-  width: z.number().optional(),
-  height: z.number().optional(),
+// Schema that matches our blueprint structure
+const fieldValueSchema = z.object({
+  name: z.string(),
+  value: z.union([z.string(), z.number(), z.boolean()]),
+  label: z.string(),
+  type: z.object({
+    name: z.enum(["text", "textarea", "date", "dropdown"]),
+    placeholder: z.string().optional(),
+    format: z.string().optional(),
+    allowedValues: z.array(z.string()).optional(),
+  }),
+});
+
+const canvasDataSchema = z.object({
+  config: z.record(z.any()), // Field types configuration
+  data: z.array(z.record(fieldValueSchema)), // Array of field data objects
 });
 
 export const canvasDocumentHandler = createDocumentHandler({
@@ -25,40 +31,40 @@ export const canvasDocumentHandler = createDocumentHandler({
       transient: true,
     });
 
-    const { object: chartData } = await generateObject({
+    const { object: canvasData } = await generateObject({
       model: myProvider.languageModel("artifact-model"),
-      schema: chartDataSchema,
+      schema: canvasDataSchema,
       system: canvasPrompt,
-      prompt: `Create a chart based on the title: "${title}". 
+      prompt: `Create realistic data based on the title: "${title}". 
       
-      Generate appropriate sample data that makes sense for the title. 
-      Choose the most suitable chart type (bar, line, or pie) based on the data.
-      Include 4-8 data points with meaningful labels and realistic values.
+      Generate appropriate sample data that makes sense for the title context.
+      Follow the blueprint structure with config and data arrays.
+      Include 3-6 data rows with meaningful, realistic values.
       
       For example:
-      - If it's about sales data, use a bar chart with months and sales figures
-      - If it's about trends over time, use a line chart
-      - If it's about proportions or percentages, use a pie chart
+      - If it's about Jira stories, create task-related data with titles, descriptions, dates, and statuses
+      - If it's about user profiles, create user information with names, emails, dates, and categories
+      - If it's about project data, create project-related information
       
-      Make sure the data is realistic and the chart type fits the content.`,
+      Make sure all data is realistic and follows the field type constraints (dates in YYYY-MM-DD format, dropdown values from allowedValues, etc.).`,
     });
 
-    const chartJson = JSON.stringify(chartData, null, 2);
+    const canvasJson = JSON.stringify(canvasData, null, 2);
 
     dataStream.write({
       type: "data-canvasDelta",
-      data: chartJson,
+      data: canvasJson,
       transient: true,
     });
 
-    return chartJson;
+    return canvasJson;
   },
   onUpdateDocument: async ({ document, description, dataStream }) => {
     let currentData: any;
     try {
       currentData = JSON.parse(document.content || "{}");
     } catch {
-      currentData = {};
+      currentData = { config: {}, data: [] };
     }
 
     dataStream.write({
@@ -67,26 +73,26 @@ export const canvasDocumentHandler = createDocumentHandler({
       transient: true,
     });
 
-    const { object: updatedChartData } = await generateObject({
+    const { object: updatedCanvasData } = await generateObject({
       model: myProvider.languageModel("artifact-model"),
-      schema: chartDataSchema,
+      schema: canvasDataSchema,
       system: updateDocumentPrompt(document.content, "canvas"),
-      prompt: `Update the existing chart data based on this request: "${description}"
+      prompt: `Update the existing canvas data based on this request: "${description}"
       
-      Current chart data:
+      Current canvas data:
       ${JSON.stringify(currentData, null, 2)}
       
-      Modify the chart according to the user's request. This could involve:
-      - Changing the chart type (bar, line, pie)
-      - Updating data values
-      - Adding or removing data points
-      - Changing labels or title
-      - Adjusting colors
+      Modify the data according to the user's request. This could involve:
+      - Adding or removing data rows
+      - Updating field values
+      - Changing field configurations
+      - Modifying labels or field types
+      - Adjusting data to match new requirements
       
-      Keep the changes focused on what the user requested while maintaining data integrity.`,
+      Keep the changes focused on what the user requested while maintaining data integrity and following field type constraints.`,
     });
 
-    const updatedJson = JSON.stringify(updatedChartData, null, 2);
+    const updatedJson = JSON.stringify(updatedCanvasData, null, 2);
 
     dataStream.write({
       type: "data-canvasDelta",

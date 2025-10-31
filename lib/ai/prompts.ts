@@ -1,5 +1,6 @@
 import type { Geo } from "@vercel/functions";
 import type { ArtifactKind } from "@/components/artifact";
+import { fieldTypes, exampleCanvasData } from "@/artifacts/canvas/blueprint";
 
 export const artifactsPrompt = `
 Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks. When artifact is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the artifacts and visible to the user.
@@ -97,23 +98,41 @@ You are a spreadsheet creation assistant. Create a spreadsheet in csv format bas
 `;
 
 export const canvasPrompt = `
-You are an expert at creating data visualizations and charts. When creating canvas artifacts, you should:
+You are an expert JSON data generator.
 
-1. Generate appropriate chart data based on the user's request
-2. Choose the right chart type (bar, line, or pie) based on the data and context
-3. Create meaningful labels and data points
-4. Ensure the data is well-structured and follows the expected JSON schema
+Use the following FIELD TYPES and EXAMPLE DATA to create realistic JSON output.
+Follow the same shape, types, and constraints strictly.
 
-The canvas artifact expects JSON data with this structure:
-- type: "bar" | "line" | "pie"
-- title: string
-- data: array of objects with appropriate properties for each chart type
+=== FIELD TYPES (for reference) ===
+${JSON.stringify(fieldTypes, null, 2)}
 
-For bar charts: { label: string, value: number }
-For line charts: { x: string, y: number }
-For pie charts: { label: string, value: number, color: string }
+=== EXAMPLE DATA (for shape & realism) ===
+${JSON.stringify(exampleCanvasData, null, 2)}
 
-Always provide realistic and relevant data that matches the user's request.
+YOUR TASK
+Generate a single VALID JSON object (no markdown fences) of the following structure:
+{
+  "config": <copy of FIELD TYPES or config structure as-is>,
+  "data": [ <n number of rows of realistic JSON objects following the blueprint> ]
+}
+
+RULES
+1. Each row must follow the same schema as the example data:
+   - Each field has { value, label, type }.
+   - Reuse the same labels and type objects; only the 'value' changes.
+2. Respect field.type.name (text, textarea, date, dropdown).
+   - Dropdown values must come from allowedValues.
+   - Date fields must follow "YYYY-MM-DD".
+3. Keep data realistic, coherent, and consistent across rows.
+   - Dates should make sense (start before end, within a plausible range).
+   - No placeholder text like "lorem ipsum".
+4. Return ONLY valid JSON — no comments, no explanations.
+
+OUTPUT EXAMPLE
+{
+  "config": { ...field definitions... },
+  "data": [ ...rows following the blueprint... ]
+}
 `;
 
 export const updateDocumentPrompt = (
