@@ -6,26 +6,23 @@ import { createContext, type ReactNode, useContext, useState } from "react";
 type AIContextData = {
   artifact: {
     canvasArtifact: {
-      data: Record<string, any>;
+      data: {
+        documentId?: string;
+        [dataKey: string]: any;
+      };
       selections: Record<string, any>;
     };
     // Other artifacts can be added here later
-    [key: string]: {
-      data: Record<string, any>;
+    [artifactKey: string]: {
+      data: {
+        documentId?: string;
+        [dataKey: string]: any;
+      };
       selections: Record<string, any>;
     };
   };
-  chatHistory: {
-    messages: Array<{
-      id: string;
-      role: 'user' | 'assistant' | 'system' | 'tool';
-      content: string;
-      timestamp: number;
-      metadata?: Record<string, any>;
-    }>;
-  };
   // Other things can be added here later
-  [key: string]: any;
+  [contextKey: string]: any;
 };
 
 // Context methods
@@ -34,19 +31,6 @@ type AIContextMethods = {
   setArtifactSelection: (artifactType: string, id: string, value: any) => void;
   getArtifactData: (artifactType: string, id: string) => any;
   getArtifactSelection: (artifactType: string, id: string) => any;
-  addMessage: (message: {
-    id: string;
-    role: 'user' | 'assistant' | 'system' | 'tool';
-    content: string;
-    metadata?: Record<string, any>;
-  }) => void;
-  getMessages: () => Array<{
-    id: string;
-    role: 'user' | 'assistant' | 'system' | 'tool';
-    content: string;
-    timestamp: number;
-    metadata?: Record<string, any>;
-  }>;
   getContextAsJson: () => string;
 };
 
@@ -65,9 +49,6 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
         selections: {},
       },
     },
-    chatHistory: {
-      messages: [],
-    },
   });
 
   const setArtifactData = (artifactType: string, id: string, value: any) => {
@@ -79,7 +60,8 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
           ...prev.artifact[artifactType],
           data: {
             ...prev.artifact[artifactType]?.data,
-            [id]: value,
+            documentId: id,
+            ...value,
           },
           selections: prev.artifact[artifactType]?.selections || {},
         },
@@ -109,37 +91,15 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
   };
 
   const getArtifactData = (artifactType: string, id: string) => {
-    return contextData.artifact[artifactType]?.data[id];
+    const artifactData = contextData.artifact[artifactType]?.data;
+    if (artifactData && artifactData.documentId === id) {
+      return artifactData;
+    }
+    return null;
   };
 
   const getArtifactSelection = (artifactType: string, id: string) => {
     return contextData.artifact[artifactType]?.selections[id];
-  };
-
-  // Chat history methods
-  const addMessage = (message: {
-    id: string;
-    role: 'user' | 'assistant' | 'system' | 'tool';
-    content: string;
-    metadata?: Record<string, any>;
-  }) => {
-
-    const newMessage = {
-      ...message,
-      timestamp: Date.now()
-    };
-
-    setContextData(prev => ({
-      ...prev,
-      chatHistory: {
-        ...prev.chatHistory,
-        messages: [...prev.chatHistory.messages, newMessage]
-      }
-    }));
-  };
-
-  const getMessages = () => {
-    return contextData.chatHistory.messages;
   };
 
   const getContextAsJson = () => {
@@ -152,8 +112,6 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     setArtifactSelection,
     getArtifactData,
     getArtifactSelection,
-    addMessage,
-    getMessages,
     getContextAsJson,
   };
 

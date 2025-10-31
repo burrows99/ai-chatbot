@@ -3,9 +3,9 @@ import { Artifact } from "@/components/create-artifact";
 import { DocumentSkeleton } from "@/components/document-skeleton";
 import {
   CopyIcon,
+  MessageIcon,
   RedoIcon,
   UndoIcon,
-  MessageIcon,
 } from "@/components/icons";
 
 type Metadata = {
@@ -15,11 +15,13 @@ type Metadata = {
 const JsonViewer = ({ content }: { content: string }) => {
   try {
     const jsonData = JSON.parse(content);
-    
+
     return (
       <div className="h-full w-full overflow-auto p-4">
         <div className="rounded-lg border bg-gray-50 p-4">
-          <h3 className="mb-4 font-semibold text-gray-800 text-lg">Generated Canvas Data</h3>
+          <h3 className="mb-4 font-semibold text-gray-800 text-lg">
+            Generated Canvas Data
+          </h3>
           <pre className="overflow-auto rounded bg-white p-4 text-sm">
             <code className="text-gray-700">
               {JSON.stringify(jsonData, null, 2)}
@@ -32,9 +34,12 @@ const JsonViewer = ({ content }: { content: string }) => {
     return (
       <div className="flex h-full w-full items-center justify-center p-8">
         <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <h3 className="mb-2 font-semibold text-lg text-red-800">Invalid JSON</h3>
+          <h3 className="mb-2 font-semibold text-lg text-red-800">
+            Invalid JSON
+          </h3>
           <p className="text-red-600">
-            Error parsing JSON data: {error instanceof Error ? error.message : "Invalid format"}
+            Error parsing JSON data:{" "}
+            {error instanceof Error ? error.message : "Invalid format"}
           </p>
           <div className="mt-4 rounded bg-red-100 p-3 text-left text-sm">
             <strong>Raw content:</strong>
@@ -70,7 +75,7 @@ export const canvasArtifact = new Artifact<"canvas", Metadata>({
     if (status === "streaming" && !content) {
       return <DocumentSkeleton artifactKind="canvas" />;
     }
-    
+
     return <JsonViewer content={content} />;
   },
   actions: [

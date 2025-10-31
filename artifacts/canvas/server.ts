@@ -24,7 +24,7 @@ const canvasDataSchema = z.object({
 
 export const canvasDocumentHandler = createDocumentHandler({
   kind: "canvas",
-  onCreateDocument: async ({ title, dataStream }) => {
+  onCreateDocument: async ({ id, title, dataStream }) => {
     dataStream.write({
       type: "data-canvasDelta",
       data: "",
@@ -54,6 +54,23 @@ export const canvasDocumentHandler = createDocumentHandler({
     dataStream.write({
       type: "data-canvasDelta",
       data: canvasJson,
+      transient: true,
+    });
+
+    // Publish canvas data to AI context for future AI analysis
+    dataStream.write({
+      type: "data-aiContextUpdate",
+      data: {
+        action: "setArtifactData",
+        artifactType: "canvasArtifact",
+        documentId: id,
+        payload: {
+          title,
+          content: canvasData,
+          timestamp: Date.now(),
+          kind: "canvas"
+        }
+      },
       transient: true,
     });
 
@@ -97,6 +114,24 @@ export const canvasDocumentHandler = createDocumentHandler({
     dataStream.write({
       type: "data-canvasDelta",
       data: updatedJson,
+      transient: true,
+    });
+
+    // Publish updated canvas data to AI context
+    dataStream.write({
+      type: "data-aiContextUpdate",
+      data: {
+        action: "setArtifactData",
+        artifactType: "canvasArtifact",
+        documentId: document.id,
+        payload: {
+          title: document.title,
+          content: updatedCanvasData,
+          timestamp: Date.now(),
+          kind: "canvas",
+          updateDescription: description
+        }
+      },
       transient: true,
     });
 

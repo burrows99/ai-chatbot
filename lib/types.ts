@@ -36,6 +36,12 @@ export type CustomUIDataTypes = {
   sheetDelta: string;
   codeDelta: string;
   canvasDelta: string;
+  aiContextUpdate: {
+    action: string;
+    artifactType: string;
+    documentId: string;
+    payload: any;
+  };
   suggestion: Suggestion;
   appendMessage: string;
   id: string;

@@ -6,9 +6,10 @@ import { memo } from "react";
 import { useWindowSize } from "usehooks-ts";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, VercelIcon } from "./icons";
+import { PlusIcon, TerminalIcon, VercelIcon } from "./icons";
 import { useSidebar } from "./ui/sidebar";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
+import { useAIContext } from "@/lib/ai/context/ai-context";
 
 function PureChatHeader({
   chatId,
@@ -21,8 +22,15 @@ function PureChatHeader({
 }) {
   const router = useRouter();
   const { open } = useSidebar();
+  const { getContextAsJson } = useAIContext();
 
   const { width: windowWidth } = useWindowSize();
+
+  const handleLogAIContext = () => {
+    const contextJson = getContextAsJson();
+    console.log("AI Context:", contextJson);
+    console.log("AI Context (parsed):", JSON.parse(contextJson));
+  };
 
   return (
     <header className="sticky top-0 flex items-center gap-2 bg-background px-2 py-1.5 md:px-2">
@@ -49,6 +57,15 @@ function PureChatHeader({
           selectedVisibilityType={selectedVisibilityType}
         />
       )}
+
+      <Button
+        className="order-3 mr-2 hidden h-8 w-8 p-0 md:flex"
+        onClick={handleLogAIContext}
+        title="Log AI Context"
+        variant="outline"
+      >
+        <TerminalIcon size={16} />
+      </Button>
 
       <Button
         asChild

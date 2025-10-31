@@ -4,9 +4,11 @@ import { useEffect, useRef } from "react";
 import { initialArtifactData, useArtifact } from "@/hooks/use-artifact";
 import { artifactDefinitions } from "./artifact";
 import { useDataStream } from "./data-stream-provider";
+import { useAIContext } from "@/lib/ai/context/ai-context";
 
 export function DataStreamHandler() {
   const { dataStream } = useDataStream();
+  const { setArtifactData, setArtifactSelection } = useAIContext();
 
   const { artifact, setArtifact, setMetadata } = useArtifact();
   const lastProcessedIndex = useRef(-1);
@@ -20,6 +22,19 @@ export function DataStreamHandler() {
     lastProcessedIndex.current = dataStream.length - 1;
 
     for (const delta of newDeltas) {
+      // Handle AI context updates
+      if (delta.type === "data-aiContextUpdate") {
+        const { action, artifactType, documentId, payload } = delta.data;
+        
+        if (action === "setArtifactData") {
+          setArtifactData(artifactType, documentId, payload);
+        } else if (action === "setArtifactSelection") {
+          setArtifactSelection(artifactType, documentId, payload);
+        }
+        
+        continue; // Skip to next delta
+      }
+
       const artifactDefinition = artifactDefinitions.find(
         (currentArtifactDefinition) =>
           currentArtifactDefinition.kind === artifact.kind
@@ -78,7 +93,7 @@ export function DataStreamHandler() {
         }
       });
     }
-  }, [dataStream, setArtifact, setMetadata, artifact]);
+  }, [dataStream, setArtifact, setMetadata, artifact, setArtifactData, setArtifactSelection]);
 
   return null;
 }
