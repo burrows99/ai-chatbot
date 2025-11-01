@@ -5,7 +5,7 @@ import JsonViewer from '@/components/business/json-viewer/json-viewer';
 const CanvasViewer = ({ content }: { content: string }) => {
     return (
       <div className="h-full w-full">
-        <DynamicKanban content={content} />
+        <DynamicKanban/>
         <JsonViewer content={content} />
       </div>
     );

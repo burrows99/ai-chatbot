@@ -2,7 +2,7 @@
 /** biome-ignore-all lint/nursery/noShadow: <explanation> */
 "use client";
 
-import { useCallback, useState, useMemo, useEffect } from "react";
+import { useCallback, useState, useMemo, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     KanbanBoard,
@@ -56,33 +56,38 @@ type KanbanFeature = {
     };
 };
 
-type ParsedContent = {
-    data?: any[];
-};
-
-const DynamicKanban = ({ content }: { content: string }) => {
-    const { setArtifactData } = useAIContext();
+const DynamicKanban = () => {
+    const { contextData, setArtifactData } = useAIContext();
+    const dataRef = useRef<any[]>([]);
+    
     const parseResult = useMemo(() => {
         try {
-            const parsedContent = JSON.parse(content);
-            const data = parsedContent?.data || [];
+            const artifactData = contextData?.artifact?.canvasArtifact?.data;
+            
+            // The data might be directly in artifactData or nested under a 'data' property
+            const data = artifactData?.data || artifactData;
+            const dataArray = Array.isArray(data) ? data : [];
+            
+            // Only update ref if data actually changed
+            if (JSON.stringify(dataArray) !== JSON.stringify(dataRef.current)) {
+                dataRef.current = dataArray;
+            }
+            
             return {
                 success: true,
-                parsedContent,
-                data: Array.isArray(data) ? data : [],
+                data: dataRef.current,
                 error: null,
             };
         } catch (error) {
             return {
                 success: false,
-                parsedContent: { data: [] },
                 data: [],
                 error: error instanceof Error ? error.message : "Invalid format",
             };
         }
-    }, [content]);
+    }, [contextData?.artifact?.canvasArtifact?.data]);
 
-    const { parsedContent, data, error } = parseResult;
+    const { data, error } = parseResult;
     const firstRecord = data[0] ?? {};
     const extractColumns = useCallback((dataArray: any[]): KanbanColumn[] => {
         if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
@@ -148,7 +153,7 @@ const DynamicKanban = ({ content }: { content: string }) => {
 
     const fieldMappings = useMemo(() => detectFieldMappings(firstRecord), [detectFieldMappings, firstRecord]);
     const { idField, dateField, columnField } = fieldMappings;
-    const newColumns = useMemo(() => extractColumns(data), [extractColumns, data]);
+    const newColumns = useMemo(() => extractColumns(data), [data, extractColumns]);
     const initialFeatures = useMemo(() => {
         if (!data || data.length === 0) { return []; }
 
@@ -178,26 +183,19 @@ const DynamicKanban = ({ content }: { content: string }) => {
 
     const [newFeatures, setNewFeatures] = useState<KanbanFeature[]>(initialFeatures);
 
-    // Synchronize state when content changes (e.g., when artifact reopens)
-    useEffect(() => {
-        setNewFeatures(initialFeatures);
-    }, [initialFeatures]);
-
     const getUpdatedContentData = useCallback((
-        originalContent: ParsedContent,
+        originalContent: any,
         updatedFeatures: KanbanFeature[],
         fieldMappings: {
             idField: string;
             dateField: string;
             columnField: string;
         }
-    ): ParsedContent => {
+    ): any => {
         const { columnField } = fieldMappings;
 
-        const updatedContent: ParsedContent = {
-            ...originalContent,
-            data: JSON.parse(JSON.stringify(originalContent.data)),
-        };
+        // Work with the original data structure
+        const updatedData = JSON.parse(JSON.stringify(originalContent));
 
         const featureMap = new Map<string, KanbanFeature>();
         updatedFeatures.map((feature) => {
@@ -205,35 +203,39 @@ const DynamicKanban = ({ content }: { content: string }) => {
             return null;
         });
 
-        updatedContent.data = (updatedContent?.data || []).map((record, index) => {
-            const recordId = String(record[idField]?.value || `item-${index}`);
-            const feature = featureMap.get(recordId);
-            if (!feature) {
-                return record;
-            }
-            const updatedRecord = { ...record };
-            if (updatedRecord[columnField]) {
-                updatedRecord[columnField] = {
-                    ...updatedRecord[columnField],
-                    value: feature.column,
-                };
-            }
+        // Update the data array if it exists
+        if (Array.isArray(updatedData)) {
+            return updatedData.map((record, index) => {
+                const recordId = String(record[idField]?.value || `item-${index}`);
+                const feature = featureMap.get(recordId);
+                if (!feature) {
+                    return record;
+                }
+                const updatedRecord = { ...record };
+                if (updatedRecord[columnField]) {
+                    updatedRecord[columnField] = {
+                        ...updatedRecord[columnField],
+                        value: feature.column,
+                    };
+                }
 
-            return updatedRecord;
-        });
+                return updatedRecord;
+            });
+        }
 
-        return updatedContent;
+        return updatedData;
     }, [idField]);
 
     const onDataChange = useCallback((updatedFeatures: KanbanFeature[]) => {
         setNewFeatures(updatedFeatures);
-        const updatedContentData = getUpdatedContentData(
-            parsedContent,
+        const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
+        const updatedData = getUpdatedContentData(
+            currentArtifactData?.data || currentArtifactData,
             updatedFeatures,
             fieldMappings
         );
-        setArtifactData("canvasArtifact", updatedContentData.data);
-    }, [fieldMappings, getUpdatedContentData, parsedContent, setArtifactData]);
+        setArtifactData("canvasArtifact", { data: updatedData });
+    }, [fieldMappings, getUpdatedContentData, contextData?.artifact?.canvasArtifact?.data, setArtifactData]);
 
     if (error) {
         return (
