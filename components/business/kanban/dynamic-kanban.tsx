@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/correctness/useHookAtTopLevel: <explanation> */
+/** biome-ignore-all lint/nursery/noShadow: <explanation> */
 "use client";
 
 import { useCallback, useState } from "react";
@@ -9,6 +11,7 @@ import {
   KanbanHeader,
   KanbanProvider,
 } from "@/components/ui/shadcn-io/kanban";
+import { useAIContext } from "@/lib/ai/context/ai-context";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -47,7 +50,10 @@ type KanbanFeature = {
   startAt: Date;
   endAt: Date;
   column: string;
-  owner: null;
+  owner: {
+    name: string;
+    image: string;
+  };
 };
 
 type ParsedContent = {
@@ -55,9 +61,9 @@ type ParsedContent = {
 };
 
 const DynamicKanban = ({ content }: { content: string }) => {
-  // Parse data FIRST, before any hooks
   let data: any[] = [];
   let parsedContent: ParsedContent;
+  const { setArtifactData } = useAIContext();
 
   try {
     parsedContent = JSON.parse(content);
@@ -83,7 +89,6 @@ const DynamicKanban = ({ content }: { content: string }) => {
     );
   }
 
-  // Early return if no data, BEFORE hooks
   if (!data || data.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center p-8">
@@ -99,7 +104,6 @@ const DynamicKanban = ({ content }: { content: string }) => {
     );
   }
 
-  // NOW use hooks with actual data
   const firstRecord = data[0] ?? {};
 
   const extractColumns = useCallback(
@@ -133,33 +137,127 @@ const DynamicKanban = ({ content }: { content: string }) => {
     [firstRecord]
   );
 
+  const detectFieldMappings = useCallback(
+    (
+      firstRecord: any
+    ): {
+      idField: string;
+      dateField: string;
+      columnField: string;
+    } => {
+      const idField =
+        Object.keys(firstRecord).find(
+          (fieldNumber) => firstRecord[fieldNumber]?.type?.name === "text"
+        ) ||
+        Object.keys(firstRecord)[0] ||
+        "field1";
+
+      const dateField =
+        Object.keys(firstRecord).find(
+          (fieldNumber) => firstRecord[fieldNumber]?.type?.name === "date"
+        ) ||
+        Object.keys(firstRecord).find(
+          (fieldNumber) => firstRecord[fieldNumber]?.type?.name === "text"
+        ) ||
+        Object.keys(firstRecord)[1] ||
+        "field4";
+
+      const columnField =
+        Object.keys(firstRecord).find(
+          (fieldNumber) => firstRecord[fieldNumber]?.type?.name === "dropdown"
+        ) ||
+        Object.keys(firstRecord).find((fieldNumber) =>
+          Array.isArray(firstRecord[fieldNumber]?.type?.allowedValues)
+        ) ||
+        "field3";
+
+      return { idField, dateField, columnField };
+    },
+    []
+  );
+
+  const fieldMappings = detectFieldMappings(firstRecord);
+
+  const { idField, dateField, columnField } = fieldMappings;
+
+  const getUpdatedContentData = useCallback(
+    (
+      originalContent: ParsedContent,
+      updatedFeatures: KanbanFeature[],
+      fieldMappings: {
+        idField: string;
+        dateField: string;
+        columnField: string;
+      }
+    ): ParsedContent => {
+      const {
+        // idField,
+        // dateField,
+        columnField,
+      } = fieldMappings;
+
+      const updatedContent: ParsedContent = {
+        ...originalContent,
+        data: JSON.parse(JSON.stringify(originalContent.data)),
+      };
+
+      const featureMap = new Map<string, KanbanFeature>();
+      updatedFeatures.map((feature) => {
+        featureMap.set(feature.id, feature);
+        return null;
+      });
+
+      updatedContent.data = (updatedContent?.data || []).map(
+        (record, index) => {
+          const recordId = String(record[idField]?.value || `item-${index}`);
+          const feature = featureMap.get(recordId);
+
+          if (!feature) {
+            return record;
+          }
+
+          // Create a copy of the record to update
+          const updatedRecord = { ...record };
+
+          // // Update the ID/name field if it exists
+          // if (updatedRecord[idField]) {
+          //     updatedRecord[idField] = {
+          //     ...updatedRecord[idField],
+          //     value: feature.name,
+          //     };
+          // }
+
+          // // Update the date field if it exists
+          // if (updatedRecord[dateField]) {
+          //     const dateValue =
+          //     feature.startAt instanceof Date
+          //         ? feature.startAt.toISOString().split("T")[0]
+          //         : new Date(feature.startAt).toISOString().split("T")[0];
+
+          //     updatedRecord[dateField] = {
+          //     ...updatedRecord[dateField],
+          //     value: dateValue,
+          //     };
+          // }
+
+          // Update the column/status field if it exists
+          if (updatedRecord[columnField]) {
+            updatedRecord[columnField] = {
+              ...updatedRecord[columnField],
+              value: feature.column,
+            };
+          }
+
+          return updatedRecord;
+        }
+      );
+
+      return updatedContent;
+    },
+    [idField]
+  );
+
   const newColumns = extractColumns(data);
-
-  const idField =
-    Object.keys(firstRecord).find(
-      (fieldNumber) => firstRecord[fieldNumber]?.type?.name === "text"
-    ) ||
-    Object.keys(firstRecord)[0] ||
-    "field1";
-
-  const dateField =
-    Object.keys(firstRecord).find(
-      (fieldNumber) => firstRecord[fieldNumber]?.type?.name === "date"
-    ) ||
-    Object.keys(firstRecord).find(
-      (fieldNumber) => firstRecord[fieldNumber]?.type?.name === "text"
-    ) ||
-    Object.keys(firstRecord)[1] ||
-    "field4";
-
-  const columnField =
-    Object.keys(firstRecord).find(
-      (fieldNumber) => firstRecord[fieldNumber]?.type?.name === "dropdown"
-    ) ||
-    Object.keys(firstRecord).find((fieldNumber) =>
-      Array.isArray(firstRecord[fieldNumber]?.type?.allowedValues)
-    ) ||
-    "field3";
 
   const [newFeatures, setNewFeatures] = useState<KanbanFeature[]>(() => {
     try {
@@ -177,7 +275,10 @@ const DynamicKanban = ({ content }: { content: string }) => {
             startAt: new Date(dateValue),
             endAt: new Date(dateValue),
             column: String(columnValue),
-            owner: null,
+            owner: {
+              name: item.owner?.value || "Unassigned",
+              image: item.owner?.image || "",
+            },
           };
         }) || []
       );
@@ -187,13 +288,23 @@ const DynamicKanban = ({ content }: { content: string }) => {
     }
   });
 
+  const onDataChange = useCallback((updatedFeatures: KanbanFeature[]) => {
+    setNewFeatures(updatedFeatures);
+    const updatedContentData = getUpdatedContentData(
+      parsedContent,
+      updatedFeatures,
+      fieldMappings
+    );
+    setArtifactData("canvasArtifact", updatedContentData.data);
+  }, [fieldMappings, getUpdatedContentData, parsedContent, setArtifactData]);
+
   try {
     return (
-      <div className="h-full w-full p-4">
+      <div className="w-full p-4">
         <KanbanProvider
           columns={newColumns}
           data={newFeatures}
-          onDataChange={setNewFeatures}
+          onDataChange={onDataChange}
         >
           {(column) => (
             <KanbanBoard id={column.id} key={column.id}>

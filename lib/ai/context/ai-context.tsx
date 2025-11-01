@@ -10,7 +10,6 @@ type AIContextData = {
         documentId?: string;
         [dataKey: string]: any;
       };
-      selections: Record<string, any>;
     };
     // Other artifacts can be added here later
     [artifactKey: string]: {
@@ -18,7 +17,6 @@ type AIContextData = {
         documentId?: string;
         [dataKey: string]: any;
       };
-      selections: Record<string, any>;
     };
   };
   // Other things can be added here later
@@ -45,7 +43,6 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     artifact: {
       canvasArtifact: {
         data: {},
-        selections: {},
       },
     },
   });
@@ -58,10 +55,13 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
         [artifactType]: {
           ...prev.artifact[artifactType],
           data: {
+            // content: {
+            //     ...prev.artifact[artifactType]?.data?.content,
+            //     ...value?.content,
+            // }
             ...prev.artifact[artifactType]?.data,
             ...value,
           },
-          selections: prev.artifact[artifactType]?.selections || {},
         },
       },
     }));

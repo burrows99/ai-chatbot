@@ -27,7 +27,7 @@ export function DataStreamHandler() {
         const { action, artifactType, payload } = delta.data;
         
         if (action === "setArtifactData") {
-          setArtifactData(artifactType, payload);
+          setArtifactData(artifactType, payload.content);
         }
         
         continue; // Skip to next delta
