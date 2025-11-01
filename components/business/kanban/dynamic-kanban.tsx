@@ -47,6 +47,7 @@ type KanbanColumn = {
 type KanbanFeature = {
     id: string;
     name: string;
+    description: string;
     startAt: Date;
     endAt: Date;
     column: string;
@@ -121,6 +122,7 @@ const DynamicKanban = () => {
         idField: string;
         dateField: string;
         columnField: string;
+        descriptionField: string;
     } => {
         const idField =
             Object.keys(firstRecord).find(
@@ -148,38 +150,49 @@ const DynamicKanban = () => {
                     Array.isArray(firstRecord[fieldNumber]?.type?.allowedValues)
             ) ||
             "field3";
-            return { idField, dateField, columnField };
-        }, []);
+        const descriptionField =
+            Object.keys(firstRecord).find(
+                (fieldNumber) => firstRecord[fieldNumber]?.type?.name === "textArea"
+            ) ||
+            "field2";
+        return { idField, dateField, columnField, descriptionField };
+    }, []);
 
     const fieldMappings = useMemo(() => detectFieldMappings(firstRecord), [detectFieldMappings, firstRecord]);
-    const { idField, dateField, columnField } = fieldMappings;
+    const { idField, dateField, columnField, descriptionField } = fieldMappings;
     const newColumns = useMemo(() => extractColumns(data), [data, extractColumns]);
     const initialFeatures = useMemo(() => {
-        if (!data || data.length === 0) { return []; }
+      if (!data || data.length === 0) {
+        return [];
+      }
 
-        try {
-            return data.map((item: any, index: number) => {
-                const idValue = item[idField]?.value || `item-${index}`;
-                const nameValue = item[idField]?.value || `Item ${index + 1}`;
-                const dateValue = item[dateField]?.value || new Date().toISOString().split("T")[0];
-                const columnValue = item[columnField]?.value || newColumns[0]?.id || "Default";
-                return {
-                    id: String(idValue),
-                    name: String(nameValue),
-                    startAt: new Date(dateValue),
-                    endAt: new Date(dateValue),
-                    column: String(columnValue),
-                    owner: {
-                        name: item.owner?.value || "Unassigned",
-                        image: item.owner?.image || "",
-                    },
-                };
-            });
-        } catch (error) {
-            console.error("Error mapping data to features:", error);
-            return [];
-        }
-    }, [data, idField, dateField, columnField, newColumns]);
+      try {
+        return data.map((item: any, index: number) => {
+          const idValue = item[idField]?.value || `item-${index}`;
+          const nameValue = item[idField]?.value || `Item ${index + 1}`;
+          const dateValue =
+            item[dateField]?.value || new Date().toISOString().split("T")[0];
+          const columnValue =
+            item[columnField]?.value || newColumns[0]?.id || "Default";
+          const descriptionValue = item[descriptionField]?.value || "";
+          return {
+            id: String(idValue),
+            name: String(nameValue),
+            description: String(descriptionValue),
+            startAt: new Date(dateValue),
+            endAt: new Date(dateValue),
+            column: String(columnValue),
+            owner: {
+              name: item.owner?.value || "Unassigned",
+              image: item.owner?.image || "",
+            },
+          };
+        });
+      } catch (error) {
+        console.error("Error mapping data to features:", error);
+        return [];
+      }
+    }, [data, idField, dateField, columnField, descriptionField, newColumns]);
 
     const [newFeatures, setNewFeatures] = useState<KanbanFeature[]>(initialFeatures);
 
@@ -293,19 +306,24 @@ const DynamicKanban = () => {
                             name={feature.name}
                         >
                             <div className="flex items-start justify-between gap-2">
-                            <div className="flex flex-col gap-1">
-                                <p className="m-0 flex-1 font-medium text-sm">
-                                {feature.name}
-                                </p>
-                            </div>
-                            {feature.owner && (
-                                <Avatar className="h-4 w-4 shrink-0">
-                                <AvatarImage src={feature.owner?.image} />
-                                <AvatarFallback>
-                                    {feature.owner?.name?.slice(0, 2)}
-                                </AvatarFallback>
-                                </Avatar>
-                            )}
+                                <div className="flex flex-col gap-1">
+                                    <p className="m-0 flex-1 font-medium text-sm">
+                                        {feature.name}
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <p className="m-0 flex-1 font-medium text-sm">
+                                        {feature.description}
+                                    </p>
+                                </div>
+                                {feature.owner && (
+                                    <Avatar className="h-4 w-4 shrink-0">
+                                        <AvatarImage src={feature.owner?.image} />
+                                        <AvatarFallback>
+                                            {feature.owner?.name?.slice(0, 2)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                )}
                             </div>
                             <p className="m-0 text-muted-foreground text-xs">
                             {(() => {
