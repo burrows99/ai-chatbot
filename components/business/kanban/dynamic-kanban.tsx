@@ -12,6 +12,8 @@ import {
     KanbanProvider,
 } from "@/components/ui/shadcn-io/kanban";
 import { useAIContext } from "@/lib/ai/context/ai-context";
+import { CommandBar } from "@/components/business/command-bar/command-bar"; // adjust path if different
+import { Plus, Pencil, Trash } from "lucide-react";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -280,77 +282,103 @@ const DynamicKanban = () => {
 
     try {
         return (
-            <div className="w-full p-4">
-                <KanbanProvider
-                columns={newColumns}
-                data={newFeatures}
-                onDataChange={onDataChange}
-                >
-                {(column) => (
-                    <KanbanBoard id={column.id} key={column.id}>
-                    <KanbanHeader>
-                        <div className="flex items-center gap-2">
-                        <div
-                            className="h-2 w-2 rounded-full"
-                            style={{ backgroundColor: column.color as string }}
-                        />
-                        <span>{column.name}</span>
-                        </div>
-                    </KanbanHeader>
-                    <KanbanCards id={column.id}>
-                        {(feature: (typeof newFeatures)[number]) => (
-                        <KanbanCard
-                            column={column.id}
-                            id={feature.id}
-                            key={feature.id}
-                            name={feature.name}
-                        >
-                            <div className="flex items-start justify-between gap-2">
-                                <div className="flex flex-col gap-1">
-                                    <p className="m-0 flex-1 font-medium text-sm">
-                                        {feature.name}
-                                    </p>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <p className="m-0 flex-1 font-medium text-sm">
-                                        {feature.description}
-                                    </p>
-                                </div>
-                                {feature.owner && (
-                                    <Avatar className="h-4 w-4 shrink-0">
-                                        <AvatarImage src={feature.owner?.image} />
-                                        <AvatarFallback>
-                                            {feature.owner?.name?.slice(0, 2)}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                )}
-                            </div>
-                            <p className="m-0 text-muted-foreground text-xs">
-                            {(() => {
-                                try {
-                                const startDate =
-                                    feature.startAt instanceof Date &&
-                                    !Number.isNaN(feature.startAt.getTime())
-                                    ? shortDateFormatter.format(feature.startAt)
-                                    : "N/A";
-                                const endDate =
-                                    feature.endAt instanceof Date &&
-                                    !Number.isNaN(feature.endAt.getTime())
-                                    ? dateFormatter.format(feature.endAt)
-                                    : "N/A";
-                                return `${startDate} - ${endDate}`;
-                                } catch (_error) {
-                                return "Invalid date";
-                                }
-                            })()}
+          <div className="w-full p-4">
+            <CommandBar
+              buttonGroups={[
+                [
+                  {
+                    label: "Add",
+                    tooltip: "Create a new card",
+                    callback: () => console.log('add'),
+                    icon: <Plus className="mr-1 h-4 w-4" />,
+                  },
+                  {
+                    label: "Edit",
+                    tooltip: "Edit selected card(s)",
+                    callback: () => console.log('edit'),
+                    icon: <Pencil className="mr-1 h-4 w-4" />,
+                    // disabled: true, // enable/disable based on your selection state
+                  },
+                  {
+                    label: "Delete",
+                    tooltip: "Delete selected card(s)",
+                    callback: () => console.log('delete'),
+                    icon: <Trash className="mr-1 h-4 w-4" />,
+                    // disabled: true,
+                  },
+                ],
+              ]}
+            />
+            <KanbanProvider
+              columns={newColumns}
+              data={newFeatures}
+              onDataChange={onDataChange}
+            >
+              {(column) => (
+                <KanbanBoard id={column.id} key={column.id}>
+                  <KanbanHeader>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: column.color as string }}
+                      />
+                      <span>{column.name}</span>
+                    </div>
+                  </KanbanHeader>
+                  <KanbanCards id={column.id}>
+                    {(feature: (typeof newFeatures)[number]) => (
+                      <KanbanCard
+                        column={column.id}
+                        id={feature.id}
+                        key={feature.id}
+                        name={feature.name}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex flex-col gap-1">
+                            <p className="m-0 flex-1 font-medium text-sm">
+                              {feature.name}
                             </p>
-                        </KanbanCard>
-                        )}
-                    </KanbanCards>
-                    </KanbanBoard>
-                )}
-                </KanbanProvider>
-            </div>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <p className="m-0 flex-1 font-medium text-sm">
+                              {feature.description}
+                            </p>
+                          </div>
+                          {feature.owner && (
+                            <Avatar className="h-4 w-4 shrink-0">
+                              <AvatarImage src={feature.owner?.image} />
+                              <AvatarFallback>
+                                {feature.owner?.name?.slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                        </div>
+                        <p className="m-0 text-muted-foreground text-xs">
+                          {(() => {
+                            try {
+                              const startDate =
+                                feature.startAt instanceof Date &&
+                                !Number.isNaN(feature.startAt.getTime())
+                                  ? shortDateFormatter.format(feature.startAt)
+                                  : "N/A";
+                              const endDate =
+                                feature.endAt instanceof Date &&
+                                !Number.isNaN(feature.endAt.getTime())
+                                  ? dateFormatter.format(feature.endAt)
+                                  : "N/A";
+                              return `${startDate} - ${endDate}`;
+                            } catch (_error) {
+                              return "Invalid date";
+                            }
+                          })()}
+                        </p>
+                      </KanbanCard>
+                    )}
+                  </KanbanCards>
+                </KanbanBoard>
+              )}
+            </KanbanProvider>
+          </div>
         );
     } catch (error) {
         console.error("Error rendering Kanban board:", error);
