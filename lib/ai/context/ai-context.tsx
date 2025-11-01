@@ -27,7 +27,7 @@ type AIContextData = {
 
 // Context methods
 type AIContextMethods = {
-  setArtifactData: (artifactType: string, id: string, value: any) => void;
+  setArtifactData: (artifactType: string, value: any) => void;
   getArtifactData: (artifactType: string) => any;
   getContextAsJson: () => string;
   contextData: AIContextData,
@@ -50,7 +50,7 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const setArtifactData = (artifactType: string, id: string, value: any) => {
+  const setArtifactData = (artifactType: string, value: any) => {
     setContextData((prev) => ({
       ...prev,
       artifact: {
@@ -59,7 +59,6 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
           ...prev.artifact[artifactType],
           data: {
             ...prev.artifact[artifactType]?.data,
-            documentId: id,
             ...value,
           },
           selections: prev.artifact[artifactType]?.selections || {},

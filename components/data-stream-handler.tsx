@@ -8,7 +8,7 @@ import { useAIContext } from "@/lib/ai/context/ai-context";
 
 export function DataStreamHandler() {
   const { dataStream } = useDataStream();
-  const { setArtifactData, setArtifactSelection } = useAIContext();
+  const { setArtifactData } = useAIContext();
 
   const { artifact, setArtifact, setMetadata } = useArtifact();
   const lastProcessedIndex = useRef(-1);
@@ -24,12 +24,10 @@ export function DataStreamHandler() {
     for (const delta of newDeltas) {
       // Handle AI context updates
       if (delta.type === "data-aiContextUpdate") {
-        const { action, artifactType, documentId, payload } = delta.data;
+        const { action, artifactType, payload } = delta.data;
         
         if (action === "setArtifactData") {
-          setArtifactData(artifactType, documentId, payload);
-        } else if (action === "setArtifactSelection") {
-          setArtifactSelection(artifactType, documentId, payload);
+          setArtifactData(artifactType, payload);
         }
         
         continue; // Skip to next delta
@@ -93,7 +91,7 @@ export function DataStreamHandler() {
         }
       });
     }
-  }, [dataStream, setArtifact, setMetadata, artifact, setArtifactData, setArtifactSelection]);
+  }, [dataStream, setArtifact, setMetadata, artifact, setArtifactData ]);
 
   return null;
 }
