@@ -49,7 +49,7 @@ export function CommandBar ({
       <TooltipProvider>
         <div
           className={cn(
-            "flex w-full items-center gap-1 rounded-md border bg-background p-1 shadow-sm",
+            "mb-3 flex w-full items-center gap-1 rounded-md border bg-background p-1 shadow-sm",
             isHorizontal ? "flex-row" : "flex-col",
             className
           )}
