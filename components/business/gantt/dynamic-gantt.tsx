@@ -45,6 +45,8 @@ const DynamicGantt = () => {
   const dataRef = useRef<any[]>([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [addingData, setAddingData] = useState<any>(null);
 
   const parseResult = useMemo(() => {
     try {
@@ -257,6 +259,30 @@ const DynamicGantt = () => {
     }
   }, [selectedItems, data, idField]);
 
+  // Add handler - clones first record and clears values
+  const handleAdd = useCallback(() => {
+    if (!data || data.length === 0) {
+      return;
+    }
+
+    // Clone the first record
+    const clonedRecord = JSON.parse(JSON.stringify(data[0]));
+
+    // Clear all field values
+    for (const fieldKey of Object.keys(clonedRecord)) {
+      if (
+        clonedRecord[fieldKey] &&
+        typeof clonedRecord[fieldKey] === "object" &&
+        clonedRecord[fieldKey].value !== undefined
+      ) {
+        clonedRecord[fieldKey].value = "";
+      }
+    }
+
+    setAddingData(clonedRecord);
+    setAddDialogOpen(true);
+  }, [data]);
+
   // Save handler - updates the data
   const handleSave = useCallback(
     (updatedFormData: any) => {
@@ -286,6 +312,24 @@ const DynamicGantt = () => {
       idField,
       setArtifactData,
     ]
+  );
+
+  // Add Save handler - appends new data
+  const handleAddSave = useCallback(
+    (newFormData: any) => {
+      const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
+      const currentData = currentArtifactData?.data || currentArtifactData;
+
+      if (!Array.isArray(currentData)) {
+        return;
+      }
+
+      // Append the new item to the data array
+      const updatedData = [...currentData, newFormData];
+
+      setArtifactData("canvasArtifact", { data: updatedData });
+    },
+    [contextData?.artifact?.canvasArtifact?.data, setArtifactData]
   );
 
   // Delete selected items
@@ -400,7 +444,7 @@ const DynamicGantt = () => {
               {
                 label: "Add",
                 tooltip: "Create a new card",
-                callback: () => console.log("add"),
+                callback: handleAdd,
                 icon: <Plus className="mr-1 h-4 w-4" />,
               },
               {
@@ -429,6 +473,17 @@ const DynamicGantt = () => {
             onSave={handleSave}
             open={editDialogOpen}
             title="Edit Card"
+          />
+        )}
+
+        {addingData && (
+          <DynamicDialog
+            data={addingData}
+            description="Create a new card. Click save when you're done."
+            onOpenChange={setAddDialogOpen}
+            onSave={handleAddSave}
+            open={addDialogOpen}
+            title="Add Card"
           />
         )}
 

@@ -53,6 +53,8 @@ const DynamicKanban = () => {
   const dataRef = useRef<any[]>([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [addingData, setAddingData] = useState<any>(null);
 
   const parseResult = useMemo(() => {
     try {
@@ -329,6 +331,30 @@ const DynamicKanban = () => {
     }
   }, [selectedItems, data, idField]);
 
+  // Add handler - opens dialog with cloned first record with cleared values
+  const handleAdd = useCallback(() => {
+    if (data.length === 0) {
+      return;
+    }
+
+    const firstRecord = data[0];
+    const clonedRecord = JSON.parse(JSON.stringify(firstRecord));
+
+    // Clear all field values
+    for (const fieldKey of Object.keys(clonedRecord)) {
+      if (
+        clonedRecord[fieldKey] &&
+        typeof clonedRecord[fieldKey] === "object" &&
+        clonedRecord[fieldKey].value !== undefined
+      ) {
+        clonedRecord[fieldKey].value = "";
+      }
+    }
+
+    setAddingData(clonedRecord);
+    setAddDialogOpen(true);
+  }, [data]);
+
   // Save handler - updates the data
   const handleSave = useCallback(
     (updatedFormData: any) => {
@@ -358,6 +384,24 @@ const DynamicKanban = () => {
       idField,
       setArtifactData,
     ]
+  );
+
+  // Add save handler - appends new record to data
+  const handleAddSave = useCallback(
+    (newFormData: any) => {
+      const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
+      const currentData = currentArtifactData?.data || currentArtifactData;
+
+      if (!Array.isArray(currentData)) {
+        return;
+      }
+
+      // Append the new item to the data array
+      const updatedData = [...currentData, newFormData];
+
+      setArtifactData("canvasArtifact", { data: updatedData });
+    },
+    [contextData?.artifact?.canvasArtifact?.data, setArtifactData]
   );
 
   // Delete selected items
@@ -427,7 +471,7 @@ const DynamicKanban = () => {
               {
                 label: "Add",
                 tooltip: "Create a new card",
-                callback: () => console.log("add"),
+                callback: handleAdd,
                 icon: <Plus className="mr-1 h-4 w-4" />,
               },
               {
@@ -456,6 +500,17 @@ const DynamicKanban = () => {
             onSave={handleSave}
             open={editDialogOpen}
             title="Edit Card"
+          />
+        )}
+
+        {addingData && (
+          <DynamicDialog
+            data={addingData}
+            description="Create a new card. Click save when you're done."
+            onOpenChange={setAddDialogOpen}
+            onSave={handleAddSave}
+            open={addDialogOpen}
+            title="Add New Card"
           />
         )}
 
