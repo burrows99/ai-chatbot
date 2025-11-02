@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/correctness/useHookAtTopLevel: false positive */
+/** biome-ignore-all lint/nursery/noShadow: intentional variable naming */
 "use client";
 
 import groupBy from "lodash.groupby";
@@ -10,9 +12,17 @@ import {
   TrashIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { getRandomColor } from "@/components/business/base/utils";
+import {
+  createStandardButtonGroups,
+  createStandardHandlers,
+  detectFieldMappings,
+  extractColumns,
+  getRandomColor,
+  parseArtifactData,
+} from "@/components/business/base/utils";
 import { CommandBar } from "@/components/business/command-bar/command-bar";
 import { DynamicDialog } from "@/components/business/dialog/dynamic-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ContextMenu,
@@ -49,28 +59,18 @@ const DynamicGantt = () => {
   const [addingData, setAddingData] = useState<any>(null);
 
   const parseResult = useMemo(() => {
-    try {
-      const artifactDataRaw = contextData?.artifact?.canvasArtifact?.data;
-      const contentData = artifactDataRaw?.data || artifactDataRaw;
-      const dataArray = Array.isArray(contentData) ? contentData : [];
+    const result = parseArtifactData(contextData);
 
-      if (JSON.stringify(dataArray) !== JSON.stringify(dataRef.current)) {
-        dataRef.current = dataArray;
-      }
-
-      return {
-        success: true,
-        data: dataRef.current,
-        error: null,
-      };
-    } catch (err) {
-      return {
-        success: false,
-        data: [],
-        error: err instanceof Error ? err.message : "Invalid format",
-      };
+    // Only update ref if data actually changed
+    if (JSON.stringify(result.data) !== JSON.stringify(dataRef.current)) {
+      dataRef.current = result.data;
     }
-  }, [contextData?.artifact?.canvasArtifact?.data]);
+
+    return {
+      ...result,
+      data: dataRef.current,
+    };
+  }, [contextData]);
 
   const { data, error } = parseResult;
   const firstRecord = data[0] ?? {};
@@ -79,96 +79,27 @@ const DynamicGantt = () => {
     return contextData?.artifact?.canvasArtifact?.selectedItems || [];
   }, [contextData?.artifact?.canvasArtifact?.selectedItems]);
 
-  const extractColumns = useCallback(
+  const extractColumnsCallback = useCallback(
     (dataArray: any[]): GanttStatus[] => {
-      if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
-        return [];
-      }
-      try {
-        for (const fieldKey in firstRecord) {
-          if (Object.hasOwn(firstRecord, fieldKey)) {
-            const field = firstRecord[fieldKey];
-            if (
-              field &&
-              typeof field === "object" &&
-              field.type &&
-              Array.isArray(field.type.allowedValues)
-            ) {
-              return field.type.allowedValues.map((value: any) => ({
-                id: String(value),
-                name: String(value),
-                color: getRandomColor(),
-              }));
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("Error extracting statuses from data:", err);
-      }
-      return [];
+      const columns = extractColumns(dataArray, firstRecord);
+      return columns.map((col) => ({
+        id: col.id,
+        name: col.name,
+        color: col.color,
+      }));
     },
     [firstRecord]
   );
 
-  const detectFieldMappings = useCallback(
-    (
-      sampleRecord: any
-    ): {
-      idField: string;
-      dateField: string;
-      columnField: string;
-      descriptionField: string;
-    } => {
-      const idKey =
-        Object.keys(sampleRecord).find(
-          (fieldNumber) => sampleRecord[fieldNumber]?.type?.name === "text"
-        ) ||
-        Object.keys(sampleRecord)[0] ||
-        "field1";
-
-      const dateKey =
-        Object.keys(sampleRecord).find(
-          (fieldNumber) => sampleRecord[fieldNumber]?.type?.name === "date"
-        ) ||
-        Object.keys(sampleRecord).find(
-          (fieldNumber) => sampleRecord[fieldNumber]?.type?.name === "text"
-        ) ||
-        Object.keys(sampleRecord)[1] ||
-        "field4";
-
-      const columnKey =
-        Object.keys(sampleRecord).find(
-          (fieldNumber) => sampleRecord[fieldNumber]?.type?.name === "dropdown"
-        ) ||
-        Object.keys(sampleRecord).find((fieldNumber) =>
-          Array.isArray(sampleRecord[fieldNumber]?.type?.allowedValues)
-        ) ||
-        "field3";
-
-      const descriptionKey =
-        Object.keys(sampleRecord).find(
-          (fieldNumber) => sampleRecord[fieldNumber]?.type?.name === "textArea"
-        ) || "field2";
-
-      return {
-        idField: idKey,
-        dateField: dateKey,
-        columnField: columnKey,
-        descriptionField: descriptionKey,
-      };
-    },
-    []
-  );
-
   const fieldMappings = useMemo(
     () => detectFieldMappings(firstRecord),
-    [detectFieldMappings, firstRecord]
+    [firstRecord]
   );
 
   const { idField, dateField, columnField, descriptionField } = fieldMappings;
   const newColumns = useMemo(
-    () => extractColumns(data),
-    [data, extractColumns]
+    () => extractColumnsCallback(data),
+    [data, extractColumnsCallback]
   );
 
   const features = useMemo(() => {
@@ -241,126 +172,36 @@ const DynamicGantt = () => {
     [selectedItems, setArtifactData]
   );
 
-  // Edit handler - opens dialog with selected item
-  const handleEdit = useCallback(() => {
-    if (selectedItems.length !== 1) {
-      return;
-    }
-
-    const selectedItemId = selectedItems[0];
-    const selectedItem = data.find((item: any, index: number) => {
-      const itemId = String(item[idField]?.value || `item-${index}`);
-      return itemId === selectedItemId;
-    });
-
-    if (selectedItem) {
-      setEditingData(selectedItem);
-      setEditDialogOpen(true);
-    }
-  }, [selectedItems, data, idField]);
-
-  // Add handler - clones first record and clears values
-  const handleAdd = useCallback(() => {
-    if (!data || data.length === 0) {
-      return;
-    }
-
-    // Clone the first record
-    const clonedRecord = JSON.parse(JSON.stringify(data[0]));
-
-    // Clear all field values
-    for (const fieldKey of Object.keys(clonedRecord)) {
-      if (
-        clonedRecord[fieldKey] &&
-        typeof clonedRecord[fieldKey] === "object" &&
-        clonedRecord[fieldKey].value !== undefined
-      ) {
-        clonedRecord[fieldKey].value = "";
-      }
-    }
-
-    setAddingData(clonedRecord);
-    setAddDialogOpen(true);
-  }, [data]);
-
-  // Save handler - updates the data
-  const handleSave = useCallback(
-    (updatedFormData: any) => {
-      const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
-      const currentData = currentArtifactData?.data || currentArtifactData;
-
-      if (!Array.isArray(currentData)) {
-        return;
-      }
-
-      const selectedItemId = selectedItems[0];
-
-      // Update the data array with the edited item
-      const updatedData = currentData.map((item: any, index: number) => {
-        const itemId = String(item[idField]?.value || `item-${index}`);
-        if (itemId === selectedItemId) {
-          return updatedFormData;
-        }
-        return item;
-      });
-
-      setArtifactData("canvasArtifact", { data: updatedData });
-    },
-    [
-      selectedItems,
-      contextData?.artifact?.canvasArtifact?.data,
-      idField,
+  // Create standard handlers using shared utility
+  const standardHandlers = useMemo(() => {
+    return createStandardHandlers({
+      contextData,
       setArtifactData,
-    ]
-  );
-
-  // Add Save handler - appends new data
-  const handleAddSave = useCallback(
-    (newFormData: any) => {
-      const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
-      const currentData = currentArtifactData?.data || currentArtifactData;
-
-      if (!Array.isArray(currentData)) {
-        return;
-      }
-
-      // Append the new item to the data array
-      const updatedData = [...currentData, newFormData];
-
-      setArtifactData("canvasArtifact", { data: updatedData });
-    },
-    [contextData?.artifact?.canvasArtifact?.data, setArtifactData]
-  );
-
-  // Delete selected items
-  const deleteSelectedItems = useCallback(() => {
-    if (selectedItems.length === 0) {
-      return;
-    }
-
-    const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
-    const currentData = currentArtifactData?.data || currentArtifactData;
-
-    if (!Array.isArray(currentData)) {
-      return;
-    }
-
-    // Filter out selected items
-    const updatedData = currentData.filter((item: any, index: number) => {
-      const itemId = String(item[idField]?.value || `item-${index}`);
-      return !selectedItems.includes(itemId);
+      selectedItems,
+      idField,
+      setEditingData,
+      setEditDialogOpen,
+      setAddingData,
+      setAddDialogOpen,
+      data,
     });
+  }, [contextData, setArtifactData, selectedItems, idField, data]);
 
-    setArtifactData("canvasArtifact", {
-      data: updatedData,
-      selectedItems: [],
-    });
-  }, [
-    selectedItems,
-    contextData?.artifact?.canvasArtifact?.data,
-    idField,
-    setArtifactData,
-  ]);
+  const {
+    handleEdit,
+    handleAdd,
+    handleSave,
+    handleAddSave,
+    deleteSelectedItems,
+  } = standardHandlers;
+
+  // Create standard button groups using shared utility
+  const buttonGroups = useMemo(() => {
+    return createStandardButtonGroups(
+      { handleAdd, handleEdit, deleteSelectedItems },
+      selectedItems
+    );
+  }, [handleAdd, handleEdit, deleteSelectedItems, selectedItems]);
 
   const handleViewFeature = (id: string) =>
     console.log(`Feature selected: ${id}`);
@@ -412,12 +253,10 @@ const DynamicGantt = () => {
   if (error) {
     return (
       <div className="flex h-full w-full items-center justify-center p-8">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <h3 className="mb-2 font-semibold text-lg text-red-800">
-            Invalid JSON for Gantt
-          </h3>
-          <p className="text-red-600">Error parsing JSON data: {error}</p>
-        </div>
+        <Alert className="max-w-md" variant="destructive">
+          <AlertTitle>Invalid JSON for Gantt</AlertTitle>
+          <AlertDescription>Error parsing JSON data: {error}</AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -439,30 +278,19 @@ const DynamicGantt = () => {
     return (
       <div className="w-full p-4">
         <CommandBar
-          buttonGroups={[
-            [
-              {
-                label: "Add",
-                tooltip: "Create a new card",
-                callback: handleAdd,
-                icon: <Plus className="mr-1 h-4 w-4" />,
-              },
-              {
-                label: "Edit",
-                tooltip: "Edit selected card(s)",
-                callback: handleEdit,
-                icon: <Pencil className="mr-1 h-4 w-4" />,
-                disabled: selectedItems.length !== 1,
-              },
-              {
-                label: "Delete",
-                tooltip: "Delete selected card(s)",
-                callback: deleteSelectedItems,
-                icon: <Trash className="mr-1 h-4 w-4" />,
-                disabled: selectedItems.length === 0,
-              },
-            ],
-          ]}
+          buttonGroups={buttonGroups.map((group) =>
+            group.map((button) => ({
+              ...button,
+              icon:
+                button.label === "Add" ? (
+                  <Plus className="mr-1 h-4 w-4" />
+                ) : button.label === "Edit" ? (
+                  <Pencil className="mr-1 h-4 w-4" />
+                ) : button.label === "Delete" ? (
+                  <Trash className="mr-1 h-4 w-4" />
+                ) : undefined,
+            }))
+          )}
         />
 
         {editingData && (
@@ -598,15 +426,13 @@ const DynamicGantt = () => {
     console.error("Error rendering Gantt Chart:", err);
     return (
       <div className="flex h-full w-full items-center justify-center p-8">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <h3 className="mb-2 font-semibold text-lg text-red-800">
-            Gantt Rendering Error
-          </h3>
-          <p className="text-red-600">
+        <Alert className="max-w-md" variant="destructive">
+          <AlertTitle>Gantt Rendering Error</AlertTitle>
+          <AlertDescription>
             Error rendering Gantt Chart:{" "}
             {err instanceof Error ? err.message : "Unknown error"}
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
