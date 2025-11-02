@@ -2,8 +2,14 @@
 /** biome-ignore-all assist/source/useSortedAttributes: intentional attribute order */
 "use client";
 
+import { SearchIcon } from "lucide-react";
 import React from "react";
 import { Button } from "@/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -35,6 +41,10 @@ type CommandBarProps = {
     | "secondary"
     | "ghost"
     | "link";
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
+  showSearch?: boolean;
 };
 
 export function CommandBar({
@@ -43,6 +53,10 @@ export function CommandBar({
   orientation = "horizontal",
   size = "default",
   variant = "outline",
+  searchValue = "",
+  onSearchChange,
+  searchPlaceholder = "Search...",
+  showSearch = false,
   ...props
 }: CommandBarProps) {
   if (!buttonGroups || buttonGroups.length === 0) {
@@ -61,9 +75,37 @@ export function CommandBar({
         )}
         {...props}
       >
+        {/* Search Box */}
+        {showSearch && onSearchChange && (
+          <>
+            <div className="min-w-0 flex-1">
+              <InputGroup>
+                <InputGroupInput
+                  placeholder={searchPlaceholder}
+                  value={searchValue}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+                <InputGroupAddon>
+                  <SearchIcon className="h-4 w-4" />
+                </InputGroupAddon>
+              </InputGroup>
+            </div>
+            {buttonGroups.length > 0 && (
+              <Separator
+                orientation={isHorizontal ? "vertical" : "horizontal"}
+                className={cn(
+                  "bg-border",
+                  isHorizontal ? "h-6 w-[1px]" : "h-[1px] w-6"
+                )}
+              />
+            )}
+          </>
+        )}
+
         {buttonGroups.map((group, groupIndex) => (
           <React.Fragment key={groupIndex}>
-            {/* Render separator before each group (except the first one) */}
+            {/* Render separator before each group (except the first one, or if search is shown) */}
             {groupIndex > 0 && (
               <Separator
                 orientation={isHorizontal ? "vertical" : "horizontal"}

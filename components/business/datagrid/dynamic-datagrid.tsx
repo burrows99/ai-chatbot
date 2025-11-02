@@ -8,6 +8,7 @@ import {
   createStandardHandlers,
   dateFormatter,
   detectFieldMappings,
+  filterDataBySearch,
   parseArtifactData,
 } from "@/components/business/base/utils";
 import { CommandBar } from "@/components/business/command-bar/command-bar";
@@ -36,6 +37,7 @@ const DynamicDataGrid = () => {
   const [editingData, setEditingData] = useState<any>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addingData, setAddingData] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const parseResult = useMemo(() => {
     return parseArtifactData(contextData);
@@ -61,7 +63,10 @@ const DynamicDataGrid = () => {
     }
 
     try {
-      return data.map((item: any, index: number) => {
+      // Apply search filter first
+      const filteredData = filterDataBySearch(data, searchQuery, fieldMappings);
+
+      return filteredData.map((item: any, index: number) => {
         const idValue = item[idField]?.value || `item-${index}`;
         const itemData: DataGridItem = {
           id: String(idValue),
@@ -81,7 +86,7 @@ const DynamicDataGrid = () => {
       console.error("Error processing grid items:", err);
       return [];
     }
-  }, [data, idField]);
+  }, [data, idField, searchQuery, fieldMappings]);
 
   // Get all field keys for table headers (excluding id)
   const tableHeaders = useMemo(() => {
@@ -138,7 +143,13 @@ const DynamicDataGrid = () => {
     data,
   });
 
-  const { handleEdit, handleAdd, handleSave, handleAddSave, deleteSelectedItems } = handlers;
+  const {
+    handleEdit,
+    handleAdd,
+    handleSave,
+    handleAddSave,
+    deleteSelectedItems,
+  } = handlers;
 
   // Create button groups using the shared utility
   const buttonGroups = createStandardButtonGroups(
@@ -175,8 +186,10 @@ const DynamicDataGrid = () => {
   }, []);
 
   // Check if all items are selected
-  const isAllSelected = gridItems.length > 0 && selectedItems.length === gridItems.length;
-  const isIndeterminate = selectedItems.length > 0 && selectedItems.length < gridItems.length;
+  const isAllSelected =
+    gridItems.length > 0 && selectedItems.length === gridItems.length;
+  const isIndeterminate =
+    selectedItems.length > 0 && selectedItems.length < gridItems.length;
 
   if (error) {
     return (
@@ -199,8 +212,14 @@ const DynamicDataGrid = () => {
   }
 
   return (
-    <div className="space-y-4">
-      <CommandBar buttonGroups={buttonGroups} />
+    <div className="w-full p-4">
+      <CommandBar
+        buttonGroups={buttonGroups}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search items..."
+        searchValue={searchQuery}
+        showSearch={true}
+      />
 
       <div className="rounded-md border">
         <Table>
@@ -211,7 +230,7 @@ const DynamicDataGrid = () => {
                   checked={isAllSelected}
                   onCheckedChange={handleSelectAll}
                   ref={(el) => {
-                    if (el && 'indeterminate' in el) {
+                    if (el && "indeterminate" in el) {
                       (el as any).indeterminate = isIndeterminate;
                     }
                   }}
@@ -227,11 +246,8 @@ const DynamicDataGrid = () => {
               const isSelected = selectedItems.includes(item.id);
               return (
                 <TableRow
+                  className={cn("cursor-pointer", isSelected && "bg-muted/50")}
                   key={item.id}
-                  className={cn(
-                    "cursor-pointer",
-                    isSelected && "bg-muted/50"
-                  )}
                   onClick={() => handleRowSelect(item.id, !isSelected)}
                 >
                   <TableCell>

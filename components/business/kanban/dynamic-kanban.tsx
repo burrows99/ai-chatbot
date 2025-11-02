@@ -9,6 +9,7 @@ import {
   dateFormatter,
   detectFieldMappings,
   extractColumns,
+  filterDataBySearch,
   parseArtifactData,
   shortDateFormatter,
 } from "@/components/business/base/utils";
@@ -16,7 +17,12 @@ import { CommandBar } from "@/components/business/command-bar/command-bar";
 import { DynamicDialog } from "@/components/business/dialog/dynamic-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   KanbanBoard,
   KanbanCard,
@@ -46,6 +52,7 @@ const DynamicKanban = () => {
   const [editingData, setEditingData] = useState<any>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addingData, setAddingData] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const parseResult = useMemo(() => {
     return parseArtifactData(contextData);
@@ -76,7 +83,10 @@ const DynamicKanban = () => {
     }
 
     try {
-      return data.map((item: any, index: number) => {
+      // Apply search filter first
+      const filteredData = filterDataBySearch(data, searchQuery, fieldMappings);
+
+      return filteredData.map((item: any, index: number) => {
         const idValue = item[idField]?.value || `item-${index}`;
         const nameValue = item[idField]?.value || `Item ${index + 1}`;
         const dateValue =
@@ -101,7 +111,16 @@ const DynamicKanban = () => {
       console.error("Error mapping data to features:", error);
       return [];
     }
-  }, [data, idField, dateField, columnField, descriptionField, newColumns]);
+  }, [
+    data,
+    idField,
+    dateField,
+    columnField,
+    descriptionField,
+    newColumns,
+    searchQuery,
+    fieldMappings,
+  ]);
 
   const getUpdatedContentData = useCallback(
     (
@@ -270,6 +289,10 @@ const DynamicKanban = () => {
       <div className="w-full p-4">
         <CommandBar
           buttonGroups={buttonGroups}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search cards..."
+          searchValue={searchQuery}
+          showSearch={true}
         />
 
         {editingData && (

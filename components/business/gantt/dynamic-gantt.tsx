@@ -3,17 +3,14 @@
 "use client";
 
 import groupBy from "lodash.groupby";
-import {
-  EyeIcon,
-  LinkIcon,
-  TrashIcon,
-} from "lucide-react";
+import { EyeIcon, LinkIcon, TrashIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   createStandardButtonGroups,
   createStandardHandlers,
   detectFieldMappings,
   extractColumns,
+  filterDataBySearch,
   getRandomColor,
   parseArtifactData,
 } from "@/components/business/base/utils";
@@ -21,7 +18,12 @@ import { CommandBar } from "@/components/business/command-bar/command-bar";
 import { DynamicDialog } from "@/components/business/dialog/dynamic-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -55,6 +57,7 @@ const DynamicGantt = () => {
   const [editingData, setEditingData] = useState<any>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addingData, setAddingData] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const parseResult = useMemo(() => {
     const result = parseArtifactData(contextData);
@@ -106,7 +109,10 @@ const DynamicGantt = () => {
     }
 
     try {
-      return data.map((item: any, index: number) => {
+      // Apply search filter first
+      const filteredData = filterDataBySearch(data, searchQuery, fieldMappings);
+
+      return filteredData.map((item: any, index: number) => {
         const idValue = item[idField]?.value || `item-${index}`;
         const nameValue = item[idField]?.value || `Item ${index + 1}`;
         const dateValue =
@@ -142,7 +148,16 @@ const DynamicGantt = () => {
       console.error("Error mapping data to features:", err);
       return [];
     }
-  }, [data, idField, dateField, columnField, descriptionField, newColumns]);
+  }, [
+    data,
+    idField,
+    dateField,
+    columnField,
+    descriptionField,
+    newColumns,
+    searchQuery,
+    fieldMappings,
+  ]);
 
   const groupedFeatures = groupBy(features, "group.name");
   const sortedGroupedFeatures = Object.fromEntries(
@@ -265,7 +280,9 @@ const DynamicGantt = () => {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>No Data Available</CardTitle>
-            <CardDescription>No data found to display in Gantt.</CardDescription>
+            <CardDescription>
+              No data found to display in Gantt.
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -277,6 +294,10 @@ const DynamicGantt = () => {
       <div className="w-full p-4">
         <CommandBar
           buttonGroups={buttonGroups}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search tasks..."
+          searchValue={searchQuery}
+          showSearch={true}
         />
 
         {editingData && (

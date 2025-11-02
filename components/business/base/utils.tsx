@@ -209,6 +209,49 @@ export const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
 });
 
+// Filter data based on search query
+export const filterDataBySearch = (
+  data: any[],
+  searchQuery: string,
+  fieldMappings: FieldMappings
+): any[] => {
+  if (!searchQuery || !searchQuery.trim()) {
+    return data;
+  }
+
+  const query = searchQuery.toLowerCase().trim();
+
+  return data.filter((item) => {
+    // Search in all mapped fields
+    const fieldsToSearch = [
+      fieldMappings.idField,
+      fieldMappings.dateField,
+      fieldMappings.columnField,
+      fieldMappings.descriptionField,
+    ];
+
+    return fieldsToSearch.some((fieldKey) => {
+      const field = item[fieldKey];
+      if (!field) {
+        return false;
+      }
+
+      // Handle different field types
+      if (typeof field === "string") {
+        return field.toLowerCase().includes(query);
+      }
+
+      if (field.value) {
+        const value = String(field.value).toLowerCase();
+        return value.includes(query);
+      }
+
+      // Fallback to string conversion
+      return String(field).toLowerCase().includes(query);
+    });
+  });
+};
+
 // Shared button group utilities
 export const createStandardHandlers = (params: {
   contextData: any;
