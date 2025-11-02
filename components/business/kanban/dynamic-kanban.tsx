@@ -447,7 +447,7 @@ const DynamicKanban = () => {
             ],
           ]}
         />
-        
+
         {editingData && (
           <DynamicDialog
             data={editingData}

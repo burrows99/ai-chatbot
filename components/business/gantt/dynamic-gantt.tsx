@@ -9,9 +9,10 @@ import {
   Trash,
   TrashIcon,
 } from "lucide-react";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { getRandomColor } from "@/components/business/base/utils";
 import { CommandBar } from "@/components/business/command-bar/command-bar";
+import { DynamicDialog } from "@/components/business/dialog/dynamic-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ContextMenu,
@@ -42,6 +43,8 @@ import { cn } from "@/lib/utils";
 const DynamicGantt = () => {
   const { contextData, setArtifactData } = useAIContext();
   const dataRef = useRef<any[]>([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingData, setEditingData] = useState<any>(null);
 
   const parseResult = useMemo(() => {
     try {
@@ -236,6 +239,55 @@ const DynamicGantt = () => {
     [selectedItems, setArtifactData]
   );
 
+  // Edit handler - opens dialog with selected item
+  const handleEdit = useCallback(() => {
+    if (selectedItems.length !== 1) {
+      return;
+    }
+
+    const selectedItemId = selectedItems[0];
+    const selectedItem = data.find((item: any, index: number) => {
+      const itemId = String(item[idField]?.value || `item-${index}`);
+      return itemId === selectedItemId;
+    });
+
+    if (selectedItem) {
+      setEditingData(selectedItem);
+      setEditDialogOpen(true);
+    }
+  }, [selectedItems, data, idField]);
+
+  // Save handler - updates the data
+  const handleSave = useCallback(
+    (updatedFormData: any) => {
+      const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
+      const currentData = currentArtifactData?.data || currentArtifactData;
+
+      if (!Array.isArray(currentData)) {
+        return;
+      }
+
+      const selectedItemId = selectedItems[0];
+
+      // Update the data array with the edited item
+      const updatedData = currentData.map((item: any, index: number) => {
+        const itemId = String(item[idField]?.value || `item-${index}`);
+        if (itemId === selectedItemId) {
+          return updatedFormData;
+        }
+        return item;
+      });
+
+      setArtifactData("canvasArtifact", { data: updatedData });
+    },
+    [
+      selectedItems,
+      contextData?.artifact?.canvasArtifact?.data,
+      idField,
+      setArtifactData,
+    ]
+  );
+
   // Delete selected items
   const deleteSelectedItems = useCallback(() => {
     if (selectedItems.length === 0) {
@@ -354,7 +406,7 @@ const DynamicGantt = () => {
               {
                 label: "Edit",
                 tooltip: "Edit selected card(s)",
-                callback: () => console.log("edit"),
+                callback: handleEdit,
                 icon: <Pencil className="mr-1 h-4 w-4" />,
                 disabled: selectedItems.length !== 1,
               },
@@ -368,6 +420,18 @@ const DynamicGantt = () => {
             ],
           ]}
         />
+
+        {editingData && (
+          <DynamicDialog
+            data={editingData}
+            description="Make changes to the card. Click save when you're done."
+            onOpenChange={setEditDialogOpen}
+            onSave={handleSave}
+            open={editDialogOpen}
+            title="Edit Card"
+          />
+        )}
+
         <GanttProvider
           className="border"
           onAddItem={handleAddFeature}
