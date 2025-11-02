@@ -460,7 +460,7 @@ export const GanttHeader: FC<GanttHeaderProps> = ({ className }) => {
 
 export type GanttSidebarItemProps = {
   feature: GanttFeature;
-  onSelectItem?: (id: string) => void;
+  onSelectItem?: (id: string, event: React.MouseEvent | React.KeyboardEvent) => void;
   className?: string;
 };
 
@@ -483,7 +483,7 @@ export const GanttSidebarItem: FC<GanttSidebarItemProps> = ({
       // Scroll to the feature in the timeline
       gantt.scrollToFeature?.(feature);
       // Call the original onSelectItem callback
-      onSelectItem?.(feature.id);
+      onSelectItem?.(feature.id, event);
     }
   };
 
@@ -492,7 +492,7 @@ export const GanttSidebarItem: FC<GanttSidebarItemProps> = ({
       // Scroll to the feature in the timeline  
       gantt.scrollToFeature?.(feature);
       // Call the original onSelectItem callback
-      onSelectItem?.(feature.id);
+      onSelectItem?.(feature.id, event);
     }
   };
 

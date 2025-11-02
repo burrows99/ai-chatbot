@@ -37,20 +37,10 @@ import {
 } from "@/components/ui/shadcn-io/gantt";
 import { useAIContext } from "@/lib/ai/context/ai-context";
 import { getRandomColor } from "@/components/business/base/utils";
-
-// type ExtendedGanttFeature = GanttFeature & {
-//   owner?: {
-//     name: string;
-//     image: string;
-//   };
-//   group: {
-//     id: string;
-//     name: string;
-//   };
-// };
+import { cn } from "@/lib/utils";
 
 const DynamicGantt = () => {
-  const { contextData } = useAIContext();
+  const { contextData, setArtifactData } = useAIContext();
   const dataRef = useRef<any[]>([]);
 
   const parseResult = useMemo(() => {
@@ -79,6 +69,10 @@ const DynamicGantt = () => {
 
   const { data, error } = parseResult;
   const firstRecord = data[0] ?? {};
+
+  const selectedItems = useMemo(() => {
+    return contextData?.artifact?.canvasArtifact?.selectedItems || [];
+  }, [contextData?.artifact?.canvasArtifact?.selectedItems]);
 
   const extractColumns = useCallback(
     (dataArray: any[]): GanttStatus[] => {
@@ -172,7 +166,6 @@ const DynamicGantt = () => {
     [data, extractColumns]
   );
 
-  // CHANGED: Removed useState, now features are ALWAYS derived from context
   const features = useMemo(() => {
     if (!data || data.length === 0) {
       return [];
@@ -224,16 +217,79 @@ const DynamicGantt = () => {
     )
   );
 
+  // Handle feature selection
+  const handleFeatureClick = useCallback((featureId: string, event: React.MouseEvent | React.KeyboardEvent) => {
+      const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+      let newSelection: string[];
+      if (isCtrlOrCmd) {
+        if (selectedItems.includes(featureId)) {
+          newSelection = selectedItems.filter((id: string) => id !== featureId);
+        } else {
+          newSelection = [...selectedItems, featureId];
+        }
+      } else {
+        newSelection = [featureId];
+      }
+      setArtifactData("canvasArtifact", { selectedItems: newSelection });
+    },
+    [selectedItems, setArtifactData]
+  );
+
+  // Delete selected items
+  const deleteSelectedItems = useCallback(() => {
+    if (selectedItems.length === 0) {
+      return;
+    }
+
+    const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
+    const currentData = currentArtifactData?.data || currentArtifactData;
+
+    if (!Array.isArray(currentData)) {
+      return;
+    }
+
+    // Filter out selected items
+    const updatedData = currentData.filter((item: any, index: number) => {
+      const itemId = String(item[idField]?.value || `item-${index}`);
+      return !selectedItems.includes(itemId);
+    });
+
+    setArtifactData("canvasArtifact", {
+      data: updatedData,
+      selectedItems: [],
+    });
+  }, [
+    selectedItems,
+    contextData?.artifact?.canvasArtifact?.data,
+    idField,
+    setArtifactData,
+  ]);
+
   const handleViewFeature = (id: string) =>
     console.log(`Feature selected: ${id}`);
 
   const handleCopyLink = (id: string) => console.log(`Copy link: ${id}`);
 
-  // CHANGED: Just logs, doesn't modify state (Gantt is read-only)
   const handleRemoveFeature = (id: string) => {
-    console.log(
-      `Remove feature requested: ${id} (Gantt is read-only, use Kanban to modify)`
-    );
+    const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
+    const currentData = currentArtifactData?.data || currentArtifactData;
+
+    if (!Array.isArray(currentData)) {
+      return;
+    }
+
+    // Filter out the specific item
+    const updatedData = currentData.filter((item: any, index: number) => {
+      const itemId = String(item[idField]?.value || `item-${index}`);
+      return itemId !== id;
+    });
+
+    setArtifactData("canvasArtifact", {
+      data: updatedData,
+      selectedItems: selectedItems.filter(
+        (selectedId: string) => selectedId !== id
+      ),
+    });
   };
 
   const _handleRemoveMarker = (id: string) =>
@@ -242,7 +298,6 @@ const DynamicGantt = () => {
   const handleCreateMarker = (date: Date) =>
     console.log(`Create marker: ${date.toISOString()}`);
 
-  // CHANGED: Just logs, doesn't modify state (Gantt is read-only)
   const handleMoveFeature = (id: string, startAt: Date, endAt: Date | null) => {
     if (!endAt) {
       return;
@@ -300,12 +355,14 @@ const DynamicGantt = () => {
                 tooltip: "Edit selected card(s)",
                 callback: () => console.log("edit"),
                 icon: <Pencil className="mr-1 h-4 w-4" />,
+                disabled: selectedItems.length !== 1,
               },
               {
                 label: "Delete",
                 tooltip: "Delete selected card(s)",
-                callback: () => console.log("delete"),
+                callback: deleteSelectedItems,
                 icon: <Trash className="mr-1 h-4 w-4" />,
+                disabled: selectedItems.length === 0,
               },
             ],
           ]}
@@ -320,13 +377,16 @@ const DynamicGantt = () => {
             {Object.entries(sortedGroupedFeatures).map(
               ([groupKey, groupFeatures]) => (
                 <GanttSidebarGroup key={groupKey} name={groupKey}>
-                  {groupFeatures.map((feature) => (
-                    <GanttSidebarItem
-                      feature={feature}
-                      key={feature.id}
-                      onSelectItem={handleViewFeature}
-                    />
-                  ))}
+                  {groupFeatures.map((feature) => {
+                    const isSelected = selectedItems.includes(feature.id);
+                    return (
+                      <GanttSidebarItem
+                        className={cn(isSelected && "bg-secondary")}
+                        feature={feature}
+                        key={feature.id}
+                        onSelectItem={(id, event) => handleFeatureClick(id, event)}
+                      />
+                  )})}
                 </GanttSidebarGroup>
               )
             )}
@@ -337,64 +397,67 @@ const DynamicGantt = () => {
               {Object.entries(sortedGroupedFeatures).map(
                 ([groupKey, groupFeatures]) => (
                   <GanttFeatureListGroup key={groupKey}>
-                    {groupFeatures.map((feature) => (
-                      <div className="flex" key={feature.id}>
-                        <ContextMenu>
-                          <ContextMenuTrigger asChild>
-                            <button
+                    {groupFeatures.map((feature) => {
+                      const isSelected = selectedItems.includes(feature.id);
+                      return (
+                        <div className="flex" key={feature.id}>
+                          <ContextMenu>
+                            <ContextMenuTrigger asChild>
+                              <button
                               onClick={() => handleViewFeature(feature.id)}
-                              type="button"
-                            >
-                              <GanttFeatureItem
-                                onMove={handleMoveFeature}
-                                {...feature}
+                                type="button"
                               >
-                                <p className="flex-1 truncate text-xs">
-                                  {feature.name}
-                                </p>
-                                {feature.owner && (
-                                  <Avatar className="h-4 w-4">
-                                    <AvatarImage src={feature.owner.image} />
-                                    <AvatarFallback>
-                                      {feature.owner.name?.slice(0, 2)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                )}
-                              </GanttFeatureItem>
-                            </button>
-                          </ContextMenuTrigger>
-                          <ContextMenuContent>
-                            <ContextMenuItem
-                              className="flex items-center gap-2"
-                              onClick={() => handleViewFeature(feature.id)}
-                            >
-                              <EyeIcon
-                                className="text-muted-foreground"
-                                size={16}
-                              />
-                              View feature
-                            </ContextMenuItem>
-                            <ContextMenuItem
-                              className="flex items-center gap-2"
-                              onClick={() => handleCopyLink(feature.id)}
-                            >
-                              <LinkIcon
-                                className="text-muted-foreground"
-                                size={16}
-                              />
-                              Copy link
-                            </ContextMenuItem>
-                            <ContextMenuItem
-                              className="flex items-center gap-2 text-destructive"
-                              onClick={() => handleRemoveFeature(feature.id)}
-                            >
-                              <TrashIcon size={16} />
-                              Remove from roadmap
-                            </ContextMenuItem>
-                          </ContextMenuContent>
-                        </ContextMenu>
-                      </div>
-                    ))}
+                                <GanttFeatureItem
+                                  onMove={handleMoveFeature}
+                                  {...feature}
+                                  className={cn(isSelected && "ring-2 ring-primary")}
+                                >
+                                  <p className="flex-1 truncate text-xs">
+                                    {feature.name}
+                                  </p>
+                                  {feature.owner && (
+                                    <Avatar className="h-4 w-4">
+                                      <AvatarImage src={feature.owner.image} />
+                                      <AvatarFallback>
+                                        {feature.owner.name?.slice(0, 2)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  )}
+                                </GanttFeatureItem>
+                              </button>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                              <ContextMenuItem
+                                className="flex items-center gap-2"
+                                onClick={() => handleViewFeature(feature.id)}
+                              >
+                                <EyeIcon
+                                  className="text-muted-foreground"
+                                  size={16}
+                                />
+                                View feature
+                              </ContextMenuItem>
+                              <ContextMenuItem
+                                className="flex items-center gap-2"
+                                onClick={() => handleCopyLink(feature.id)}
+                              >
+                                <LinkIcon
+                                  className="text-muted-foreground"
+                                  size={16}
+                                />
+                                Copy link
+                              </ContextMenuItem>
+                              <ContextMenuItem
+                                className="flex items-center gap-2 text-destructive"
+                                onClick={() => handleRemoveFeature(feature.id)}
+                              >
+                                <TrashIcon size={16} />
+                                Remove from roadmap
+                              </ContextMenuItem>
+                            </ContextMenuContent>
+                          </ContextMenu>
+                        </div>
+                    )})}
                   </GanttFeatureListGroup>
                 )
               )}
