@@ -10,6 +10,7 @@ type AIContextData = {
         documentId?: string;
         [dataKey: string]: any;
       };
+      selectedItems?: string[]; // Added for selection tracking
     };
     // Other artifacts can be added here later
     [artifactKey: string]: {
@@ -17,6 +18,7 @@ type AIContextData = {
         documentId?: string;
         [dataKey: string]: any;
       };
+      selectedItems?: string[];
     };
   };
   // Other things can be added here later
@@ -29,6 +31,11 @@ type AIContextMethods = {
   getArtifactData: (artifactType: string) => any;
   getContextAsJson: () => string;
   contextData: AIContextData;
+  // Selection-specific methods
+  setSelectedItems: (artifactType: string, selectedIds: string[]) => void;
+  getSelectedItems: (artifactType: string) => string[];
+  clearSelectedItems: (artifactType: string) => void;
+  toggleItemSelection: (artifactType: string, itemId: string) => void;
 };
 
 // Combined context interface
@@ -43,6 +50,7 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     artifact: {
       canvasArtifact: {
         data: {},
+        selectedItems: [],
       },
     },
   });
@@ -55,20 +63,54 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
         [artifactType]: {
           ...prev.artifact[artifactType],
           data: {
-            // content: {
-            //     ...prev.artifact[artifactType]?.data?.content,
-            //     ...value?.content,
-            // }
             ...prev.artifact[artifactType]?.data,
             ...value,
           },
+          // Preserve selectedItems if not explicitly updated
+          selectedItems:
+            value.selectedItems !== undefined
+              ? value.selectedItems
+              : prev.artifact[artifactType]?.selectedItems || [],
         },
       },
     }));
   };
 
   const getArtifactData = (artifactType: string) => {
-    return contextData.artifact[artifactType]?.data?.content?.data;
+    return contextData.artifact[artifactType]?.data;
+  };
+  
+  const setSelectedItems = (artifactType: string, selectedIds: string[]) => {
+    setContextData((prev) => ({
+      ...prev,
+      artifact: {
+        ...prev.artifact,
+        [artifactType]: {
+          ...prev.artifact[artifactType],
+          selectedItems: selectedIds,
+        },
+      },
+    }));
+  };
+
+  const getSelectedItems = (artifactType: string): string[] => {
+    return contextData.artifact[artifactType]?.selectedItems || [];
+  };
+
+  const clearSelectedItems = (artifactType: string) => {
+    setSelectedItems(artifactType, []);
+  };
+
+  const toggleItemSelection = (artifactType: string, itemId: string) => {
+    const currentSelection = getSelectedItems(artifactType);
+    if (currentSelection.includes(itemId)) {
+      setSelectedItems(
+        artifactType,
+        currentSelection.filter((id) => id !== itemId)
+      );
+    } else {
+      setSelectedItems(artifactType, [...currentSelection, itemId]);
+    }
   };
 
   const getContextAsJson = () => {
@@ -81,6 +123,10 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     getArtifactData,
     getContextAsJson,
     contextData,
+    setSelectedItems,
+    getSelectedItems,
+    clearSelectedItems,
+    toggleItemSelection,
   };
 
   return (

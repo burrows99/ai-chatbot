@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/shadcn-io/kanban";
 import { useAIContext } from "@/lib/ai/context/ai-context";
 import { getRandomColor } from "@/components/business/base/utils";
+import { cn } from "@/lib/utils";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -79,6 +80,12 @@ const DynamicKanban = () => {
 
   const { data, error } = parseResult;
   const firstRecord = data[0] ?? {};
+
+  // Get selected items from context
+  const selectedItems = useMemo(() => {
+    return contextData?.artifact?.canvasArtifact?.selectedItems || [];
+  }, [contextData?.artifact?.canvasArtifact?.selectedItems]);
+
   const extractColumns = useCallback(
     (dataArray: any[]): KanbanColumn[] => {
       if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
@@ -163,7 +170,6 @@ const DynamicKanban = () => {
     [data, extractColumns]
   );
 
-  // CHANGED: Removed useState, features are now ALWAYS derived from context
   const features = useMemo(() => {
     if (!data || data.length === 0) {
       return [];
@@ -243,7 +249,6 @@ const DynamicKanban = () => {
     [idField]
   );
 
-  // CHANGED: No longer calls setNewFeatures, only updates context
   const onDataChange = useCallback(
     (updatedFeatures: KanbanFeature[]) => {
       const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
@@ -261,6 +266,82 @@ const DynamicKanban = () => {
       setArtifactData,
     ]
   );
+
+  // Handle card selection
+  const handleCardClick = useCallback(
+    (featureId: string, event: React.PointerEvent) => {
+      const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+      const isShift = event.shiftKey;
+
+      let newSelection: string[];
+
+      if (isCtrlOrCmd) {
+        // Toggle selection
+        if (selectedItems.includes(featureId)) {
+          newSelection = selectedItems.filter((id: string) => id !== featureId);
+        } else {
+          newSelection = [...selectedItems, featureId];
+        }
+      } else if (isShift && selectedItems.length > 0) {
+        // Range selection
+        const lastSelected = selectedItems.at(-1);
+        const lastIndex = features.findIndex((f) => f.id === lastSelected);
+        const currentIndex = features.findIndex((f) => f.id === featureId);
+
+        if (lastIndex !== -1 && currentIndex !== -1) {
+          const start = Math.min(lastIndex, currentIndex);
+          const end = Math.max(lastIndex, currentIndex);
+          const rangeIds = features.slice(start, end + 1).map((f) => f.id);
+
+          // Combine with existing selection
+          newSelection = Array.from(new Set([...selectedItems, ...rangeIds]));
+        } else {
+          newSelection = [featureId];
+        }
+      } else {
+        // Single selection
+        newSelection = [featureId];
+      }
+
+      setArtifactData("canvasArtifact", { selectedItems: newSelection });
+    },
+    [selectedItems, features, setArtifactData]
+  );
+
+  // Clear selection handler
+  // const clearSelection = useCallback(() => {
+  //   setArtifactData("canvasArtifact", { selectedItems: [] });
+  // }, [setArtifactData]);
+
+  // Delete selected items
+  const deleteSelectedItems = useCallback(() => {
+    if (selectedItems.length === 0) { 
+      return; 
+    }
+
+    const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
+    const currentData = currentArtifactData?.data || currentArtifactData;
+
+    if (!Array.isArray(currentData)) { 
+      return; 
+    }
+
+    // Filter out selected items
+    const updatedData = currentData.filter((item: any, index: number) => {
+      const itemId = String(item[idField]?.value || `item-${index}`);
+      return !selectedItems.includes(itemId);
+    });
+
+    setArtifactData("canvasArtifact", {
+      data: updatedData,
+      selectedItems: [],
+    });
+  }, [
+    selectedItems,
+    contextData?.artifact?.canvasArtifact?.data,
+    idField,
+    setArtifactData,
+  ]);
 
   if (error) {
     return (
@@ -307,18 +388,32 @@ const DynamicKanban = () => {
                 tooltip: "Edit selected card(s)",
                 callback: () => console.log("edit"),
                 icon: <Pencil className="mr-1 h-4 w-4" />,
-                // disabled: true, // enable/disable based on your selection state
+                disabled: selectedItems.length !== 1,
               },
               {
                 label: "Delete",
                 tooltip: "Delete selected card(s)",
-                callback: () => console.log("delete"),
+                callback: deleteSelectedItems,
                 icon: <Trash className="mr-1 h-4 w-4" />,
-                // disabled: true,
+                disabled: selectedItems.length === 0,
               },
             ],
           ]}
         />
+        {/* {selectedItems.length > 0 && (
+          <div className="mb-4 flex items-center justify-between rounded-md border bg-blue-50 p-2 text-sm">
+            <span className="text-blue-900">
+              {selectedItems.length} item{selectedItems.length !== 1 ? "s" : ""}{" "}
+              selected
+            </span>
+            <button
+              className="text-blue-700 underline hover:text-blue-900"
+              onClick={clearSelection}
+            >
+              Clear selection
+            </button>
+          </div>
+        )} */}
         <KanbanProvider
           columns={newColumns}
           data={features}
@@ -336,54 +431,61 @@ const DynamicKanban = () => {
                 </div>
               </KanbanHeader>
               <KanbanCards id={column.id}>
-                {(feature: (typeof features)[number]) => (
-                  <KanbanCard
-                    column={column.id}
-                    id={feature.id}
-                    key={feature.id}
-                    name={feature.name}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex flex-col gap-1">
-                        <p className="m-0 flex-1 font-medium text-sm">
-                          {feature.name}
-                        </p>
+                {(feature: (typeof features)[number]) => {
+                  const isSelected = selectedItems.includes(feature.id);
+                  return (
+                    <KanbanCard
+                      className={cn(isSelected && "ring-2 ring-primary")}
+                      column={column.id}
+                      id={feature.id}
+                      key={feature.id}
+                      name={feature.name}
+                    >
+                      <div
+                        className="flex items-start justify-between gap-2"
+                        onPointerUp={(e) => handleCardClick(feature.id, e)}
+                      >
+                        <div className="flex flex-col gap-1">
+                          <p className="m-0 flex-1 font-medium text-sm">
+                            {feature.name}
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <p className="m-0 flex-1 font-medium text-sm">
+                            {feature.description}
+                          </p>
+                        </div>
+                        {feature.owner && (
+                          <Avatar className="h-4 w-4 shrink-0">
+                            <AvatarImage src={feature.owner?.image} />
+                            <AvatarFallback>
+                              {feature.owner?.name?.slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
                       </div>
-                      <div className="flex flex-col gap-1">
-                        <p className="m-0 flex-1 font-medium text-sm">
-                          {feature.description}
-                        </p>
-                      </div>
-                      {feature.owner && (
-                        <Avatar className="h-4 w-4 shrink-0">
-                          <AvatarImage src={feature.owner?.image} />
-                          <AvatarFallback>
-                            {feature.owner?.name?.slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                    <p className="m-0 text-muted-foreground text-xs">
-                      {(() => {
-                        try {
-                          const startDate =
-                            feature.startAt instanceof Date &&
-                            !Number.isNaN(feature.startAt.getTime())
-                              ? shortDateFormatter.format(feature.startAt)
-                              : "N/A";
-                          const endDate =
-                            feature.endAt instanceof Date &&
-                            !Number.isNaN(feature.endAt.getTime())
-                              ? dateFormatter.format(feature.endAt)
-                              : "N/A";
-                          return `${startDate} - ${endDate}`;
-                        } catch (_error) {
-                          return "Invalid date";
-                        }
-                      })()}
-                    </p>
-                  </KanbanCard>
-                )}
+                      <p className="m-0 text-muted-foreground text-xs">
+                        {(() => {
+                          try {
+                            const startDate =
+                              feature.startAt instanceof Date &&
+                              !Number.isNaN(feature.startAt.getTime())
+                                ? shortDateFormatter.format(feature.startAt)
+                                : "N/A";
+                            const endDate =
+                              feature.endAt instanceof Date &&
+                              !Number.isNaN(feature.endAt.getTime())
+                                ? dateFormatter.format(feature.endAt)
+                                : "N/A";
+                            return `${startDate} - ${endDate}`;
+                          } catch (_error) {
+                            return "Invalid date";
+                          }
+                        })()}
+                      </p>
+                    </KanbanCard>
+                  );
+                }}
               </KanbanCards>
             </KanbanBoard>
           )}
