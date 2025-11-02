@@ -14,6 +14,7 @@ import {
   KanbanProvider,
 } from "@/components/ui/shadcn-io/kanban";
 import { useAIContext } from "@/lib/ai/context/ai-context";
+import { getRandomColor } from "@/components/business/base/utils";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -25,20 +26,6 @@ const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
 });
-
-const getRandomColor = (): string => {
-  const colors = [
-    "#6B7280",
-    "#F59E0B",
-    "#10B981",
-    "#3B82F6",
-    "#8B5CF6",
-    "#EC4899",
-    "#EF4444",
-    "#14B8A6",
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
-};
 
 type KanbanColumn = {
   id: string;
