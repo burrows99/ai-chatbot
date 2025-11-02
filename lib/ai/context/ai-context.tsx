@@ -79,7 +79,7 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
   const getArtifactData = (artifactType: string) => {
     return contextData.artifact[artifactType]?.data;
   };
-  
+
   const setSelectedItems = (artifactType: string, selectedIds: string[]) => {
     setContextData((prev) => ({
       ...prev,

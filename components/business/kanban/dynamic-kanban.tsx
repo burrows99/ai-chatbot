@@ -3,8 +3,10 @@
 "use client";
 
 import { Pencil, Plus, Trash } from "lucide-react";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { getRandomColor } from "@/components/business/base/utils";
 import { CommandBar } from "@/components/business/command-bar/command-bar";
+import { DynamicDialog } from "@/components/business/dialog/dynamic-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   KanbanBoard,
@@ -14,7 +16,6 @@ import {
   KanbanProvider,
 } from "@/components/ui/shadcn-io/kanban";
 import { useAIContext } from "@/lib/ai/context/ai-context";
-import { getRandomColor } from "@/components/business/base/utils";
 import { cn } from "@/lib/utils";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -50,6 +51,8 @@ type KanbanFeature = {
 const DynamicKanban = () => {
   const { contextData, setArtifactData } = useAIContext();
   const dataRef = useRef<any[]>([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingData, setEditingData] = useState<any>(null);
 
   const parseResult = useMemo(() => {
     try {
@@ -308,22 +311,66 @@ const DynamicKanban = () => {
     [selectedItems, features, setArtifactData]
   );
 
-  // Clear selection handler
-  // const clearSelection = useCallback(() => {
-  //   setArtifactData("canvasArtifact", { selectedItems: [] });
-  // }, [setArtifactData]);
+  // Edit handler - opens dialog with selected item
+  const handleEdit = useCallback(() => {
+    if (selectedItems.length !== 1) {
+      return;
+    }
+
+    const selectedItemId = selectedItems[0];
+    const selectedItem = data.find((item: any, index: number) => {
+      const itemId = String(item[idField]?.value || `item-${index}`);
+      return itemId === selectedItemId;
+    });
+
+    if (selectedItem) {
+      setEditingData(selectedItem);
+      setEditDialogOpen(true);
+    }
+  }, [selectedItems, data, idField]);
+
+  // Save handler - updates the data
+  const handleSave = useCallback(
+    (updatedFormData: any) => {
+      const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
+      const currentData = currentArtifactData?.data || currentArtifactData;
+
+      if (!Array.isArray(currentData)) {
+        return;
+      }
+
+      const selectedItemId = selectedItems[0];
+
+      // Update the data array with the edited item
+      const updatedData = currentData.map((item: any, index: number) => {
+        const itemId = String(item[idField]?.value || `item-${index}`);
+        if (itemId === selectedItemId) {
+          return updatedFormData;
+        }
+        return item;
+      });
+
+      setArtifactData("canvasArtifact", { data: updatedData });
+    },
+    [
+      selectedItems,
+      contextData?.artifact?.canvasArtifact?.data,
+      idField,
+      setArtifactData,
+    ]
+  );
 
   // Delete selected items
   const deleteSelectedItems = useCallback(() => {
-    if (selectedItems.length === 0) { 
-      return; 
+    if (selectedItems.length === 0) {
+      return;
     }
 
     const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
     const currentData = currentArtifactData?.data || currentArtifactData;
 
-    if (!Array.isArray(currentData)) { 
-      return; 
+    if (!Array.isArray(currentData)) {
+      return;
     }
 
     // Filter out selected items
@@ -386,7 +433,7 @@ const DynamicKanban = () => {
               {
                 label: "Edit",
                 tooltip: "Edit selected card(s)",
-                callback: () => console.log("edit"),
+                callback: handleEdit,
                 icon: <Pencil className="mr-1 h-4 w-4" />,
                 disabled: selectedItems.length !== 1,
               },
@@ -400,20 +447,18 @@ const DynamicKanban = () => {
             ],
           ]}
         />
-        {/* {selectedItems.length > 0 && (
-          <div className="mb-4 flex items-center justify-between rounded-md border bg-blue-50 p-2 text-sm">
-            <span className="text-blue-900">
-              {selectedItems.length} item{selectedItems.length !== 1 ? "s" : ""}{" "}
-              selected
-            </span>
-            <button
-              className="text-blue-700 underline hover:text-blue-900"
-              onClick={clearSelection}
-            >
-              Clear selection
-            </button>
-          </div>
-        )} */}
+        
+        {editingData && (
+          <DynamicDialog
+            data={editingData}
+            description="Make changes to the card. Click save when you're done."
+            onOpenChange={setEditDialogOpen}
+            onSave={handleSave}
+            open={editDialogOpen}
+            title="Edit Card"
+          />
+        )}
+
         <KanbanProvider
           columns={newColumns}
           data={features}

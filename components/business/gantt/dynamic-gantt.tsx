@@ -10,6 +10,7 @@ import {
   TrashIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useRef } from "react";
+import { getRandomColor } from "@/components/business/base/utils";
 import { CommandBar } from "@/components/business/command-bar/command-bar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -36,7 +37,6 @@ import {
   GanttToday,
 } from "@/components/ui/shadcn-io/gantt";
 import { useAIContext } from "@/lib/ai/context/ai-context";
-import { getRandomColor } from "@/components/business/base/utils";
 import { cn } from "@/lib/utils";
 
 const DynamicGantt = () => {
@@ -218,7 +218,8 @@ const DynamicGantt = () => {
   );
 
   // Handle feature selection
-  const handleFeatureClick = useCallback((featureId: string, event: React.MouseEvent | React.KeyboardEvent) => {
+  const handleFeatureClick = useCallback(
+    (featureId: string, event: React.MouseEvent | React.KeyboardEvent) => {
       const isCtrlOrCmd = event.ctrlKey || event.metaKey;
       let newSelection: string[];
       if (isCtrlOrCmd) {
@@ -384,9 +385,12 @@ const DynamicGantt = () => {
                         className={cn(isSelected && "bg-secondary")}
                         feature={feature}
                         key={feature.id}
-                        onSelectItem={(id, event) => handleFeatureClick(id, event)}
+                        onSelectItem={(id, event) =>
+                          handleFeatureClick(id, event)
+                        }
                       />
-                  )})}
+                    );
+                  })}
                 </GanttSidebarGroup>
               )
             )}
@@ -404,13 +408,15 @@ const DynamicGantt = () => {
                           <ContextMenu>
                             <ContextMenuTrigger asChild>
                               <button
-                              onClick={() => handleViewFeature(feature.id)}
+                                onClick={() => handleViewFeature(feature.id)}
                                 type="button"
                               >
                                 <GanttFeatureItem
                                   onMove={handleMoveFeature}
                                   {...feature}
-                                  className={cn(isSelected && "ring-2 ring-primary")}
+                                  className={cn(
+                                    isSelected && "ring-2 ring-primary"
+                                  )}
                                 >
                                   <p className="flex-1 truncate text-xs">
                                     {feature.name}
@@ -457,7 +463,8 @@ const DynamicGantt = () => {
                             </ContextMenuContent>
                           </ContextMenu>
                         </div>
-                    )})}
+                      );
+                    })}
                   </GanttFeatureListGroup>
                 )
               )}
