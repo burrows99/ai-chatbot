@@ -2,7 +2,6 @@
 /** biome-ignore-all lint/nursery/noShadow: intentional variable naming */
 "use client";
 
-import { Pencil, Plus, Trash } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
   createStandardButtonGroups,
@@ -270,19 +269,7 @@ const DynamicKanban = () => {
     return (
       <div className="w-full p-4">
         <CommandBar
-          buttonGroups={buttonGroups.map((group) =>
-            group.map((button) => ({
-              ...button,
-              icon:
-                button.label === "Add" ? (
-                  <Plus className="mr-1 h-4 w-4" />
-                ) : button.label === "Edit" ? (
-                  <Pencil className="mr-1 h-4 w-4" />
-                ) : button.label === "Delete" ? (
-                  <Trash className="mr-1 h-4 w-4" />
-                ) : undefined,
-            }))
-          )}
+          buttonGroups={buttonGroups}
         />
 
         {editingData && (

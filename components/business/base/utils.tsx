@@ -1,3 +1,5 @@
+import { Pencil, Plus, Trash } from "lucide-react";
+
 export const getRandomColor = (): string => {
   const colors = [
     "#6B7280",
@@ -326,18 +328,21 @@ export const createStandardButtonGroups = (
         label: "Add",
         tooltip: "Create a new card",
         callback: handlers.handleAdd,
+        icon: <Plus className="mr-1 h-4 w-4" />,
       },
       {
         label: "Edit",
         tooltip: "Edit selected card(s)",
         callback: handlers.handleEdit,
         disabled: selectedItems.length !== 1,
+        icon: <Pencil className="mr-1 h-4 w-4" />,
       },
       {
         label: "Delete",
         tooltip: "Delete selected card(s)",
         callback: handlers.deleteSelectedItems,
         disabled: selectedItems.length === 0,
+        icon: <Trash className="mr-1 h-4 w-4" />,
       },
     ],
   ];

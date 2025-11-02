@@ -6,9 +6,6 @@ import groupBy from "lodash.groupby";
 import {
   EyeIcon,
   LinkIcon,
-  Pencil,
-  Plus,
-  Trash,
   TrashIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -279,19 +276,7 @@ const DynamicGantt = () => {
     return (
       <div className="w-full p-4">
         <CommandBar
-          buttonGroups={buttonGroups.map((group) =>
-            group.map((button) => ({
-              ...button,
-              icon:
-                button.label === "Add" ? (
-                  <Plus className="mr-1 h-4 w-4" />
-                ) : button.label === "Edit" ? (
-                  <Pencil className="mr-1 h-4 w-4" />
-                ) : button.label === "Delete" ? (
-                  <Trash className="mr-1 h-4 w-4" />
-                ) : undefined,
-            }))
-          )}
+          buttonGroups={buttonGroups}
         />
 
         {editingData && (
