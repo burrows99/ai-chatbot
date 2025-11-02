@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/nursery/useMaxParams: <explanation> */
+/** biome-ignore-all lint/nursery/useMaxParams: false positive */
 export type FieldTypeName = "text" | "textarea" | "date" | "dropdown";
 
 type BaseFieldType = {

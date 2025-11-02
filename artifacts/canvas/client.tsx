@@ -1,13 +1,8 @@
 import { toast } from "sonner";
+import CanvasViewer from "@/components/business/canvas-viewer/canvas-viewer";
 import { Artifact } from "@/components/create-artifact";
 import { DocumentSkeleton } from "@/components/document-skeleton";
-import {
-  CopyIcon,
-  MessageIcon,
-  RedoIcon,
-  UndoIcon,
-} from "@/components/icons";
-import CanvasViewer from "@/components/business/canvas-viewer/canvas-viewer";
+import { CopyIcon, MessageIcon, RedoIcon, UndoIcon } from "@/components/icons";
 
 type Metadata = {
   jsonData: any | null;

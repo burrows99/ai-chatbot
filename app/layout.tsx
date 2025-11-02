@@ -81,9 +81,7 @@ export default function RootLayout({
         >
           <Toaster position="top-center" />
           <SessionProvider>
-            <AIContextProvider>
-              {children}
-            </AIContextProvider>
+            <AIContextProvider>{children}</AIContextProvider>
           </SessionProvider>
         </ThemeProvider>
       </body>

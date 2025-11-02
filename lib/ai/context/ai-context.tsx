@@ -28,7 +28,7 @@ type AIContextMethods = {
   setArtifactData: (artifactType: string, value: any) => void;
   getArtifactData: (artifactType: string) => any;
   getContextAsJson: () => string;
-  contextData: AIContextData,
+  contextData: AIContextData;
 };
 
 // Combined context interface

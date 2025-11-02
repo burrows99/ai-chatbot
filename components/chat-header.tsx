@@ -6,10 +6,10 @@ import { memo } from "react";
 import { useWindowSize } from "usehooks-ts";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { Button } from "@/components/ui/button";
+import { useAIContext } from "@/lib/ai/context/ai-context";
 import { PlusIcon, TerminalIcon, VercelIcon } from "./icons";
 import { useSidebar } from "./ui/sidebar";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
-import { useAIContext } from "@/lib/ai/context/ai-context";
 
 function PureChatHeader({
   chatId,

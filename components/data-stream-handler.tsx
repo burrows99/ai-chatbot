@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import { initialArtifactData, useArtifact } from "@/hooks/use-artifact";
+import { useAIContext } from "@/lib/ai/context/ai-context";
 import { artifactDefinitions } from "./artifact";
 import { useDataStream } from "./data-stream-provider";
-import { useAIContext } from "@/lib/ai/context/ai-context";
 
 export function DataStreamHandler() {
   const { dataStream } = useDataStream();
@@ -25,11 +25,11 @@ export function DataStreamHandler() {
       // Handle AI context updates
       if (delta.type === "data-aiContextUpdate") {
         const { action, artifactType, payload } = delta.data;
-        
+
         if (action === "setArtifactData") {
           setArtifactData(artifactType, payload.content);
         }
-        
+
         continue; // Skip to next delta
       }
 
@@ -91,7 +91,7 @@ export function DataStreamHandler() {
         }
       });
     }
-  }, [dataStream, setArtifact, setMetadata, artifact, setArtifactData ]);
+  }, [dataStream, setArtifact, setMetadata, artifact, setArtifactData]);
 
   return null;
 }

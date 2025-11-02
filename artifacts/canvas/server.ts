@@ -68,8 +68,8 @@ export const canvasDocumentHandler = createDocumentHandler({
           title,
           content: canvasData,
           timestamp: Date.now(),
-          kind: "canvas"
-        }
+          kind: "canvas",
+        },
       },
       transient: true,
     });
@@ -129,8 +129,8 @@ export const canvasDocumentHandler = createDocumentHandler({
           content: updatedCanvasData,
           timestamp: Date.now(),
           kind: "canvas",
-          updateDescription: description
-        }
+          updateDescription: description,
+        },
       },
       transient: true,
     });

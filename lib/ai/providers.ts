@@ -4,18 +4,18 @@ import {
   extractReasoningMiddleware,
   wrapLanguageModel,
 } from "ai";
-import { ollama } from 'ollama-ai-provider-v2';
+import { ollama } from "ollama-ai-provider-v2";
 import { isTestEnvironment } from "../constants";
 
 const ollamaProvider = customProvider({
   languageModels: {
-    'chat-model': ollama('gpt-oss:120b-cloud'),
-    'chat-model-reasoning': wrapLanguageModel({
-      model: ollama('gpt-oss:120b-cloud'),
-      middleware: extractReasoningMiddleware({ tagName: 'reasoning' }),
+    "chat-model": ollama("gpt-oss:120b-cloud"),
+    "chat-model-reasoning": wrapLanguageModel({
+      model: ollama("gpt-oss:120b-cloud"),
+      middleware: extractReasoningMiddleware({ tagName: "reasoning" }),
     }),
-    'title-model': ollama('gpt-oss:120b-cloud'),
-    'artifact-model': ollama('gpt-oss:120b-cloud'),
+    "title-model": ollama("gpt-oss:120b-cloud"),
+    "artifact-model": ollama("gpt-oss:120b-cloud"),
   },
   imageModels: {
     // 'small-model': openai.image('gpt-image-1'),
@@ -52,4 +52,4 @@ export const myProvider = isTestEnvironment
       });
     })()
   : ollamaProvider;
-  // : xAIProvider;
+// : xAIProvider;
