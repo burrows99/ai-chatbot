@@ -24,6 +24,7 @@ import { CommandBar } from "@/components/business/command-bar/command-bar";
 import { DynamicDialog } from "@/components/business/dialog/dynamic-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -264,12 +265,12 @@ const DynamicGantt = () => {
   if (!data || data.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center p-8">
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
-          <h3 className="mb-2 font-semibold text-gray-800 text-lg">
-            No Data Available
-          </h3>
-          <p className="text-gray-600">No data found to display in Gantt.</p>
-        </div>
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>No Data Available</CardTitle>
+            <CardDescription>No data found to display in Gantt.</CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     );
   }
