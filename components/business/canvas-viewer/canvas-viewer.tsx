@@ -10,7 +10,6 @@ const CanvasViewer = () => {
       <DynamicDataGrid />
       <DynamicKanban />
       <DynamicGantt />
-      {/* <JsonViewer content={content} /> */}
     </div>
   );
 };

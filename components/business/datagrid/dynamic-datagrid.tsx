@@ -14,6 +14,12 @@ import {
 import { CommandBar } from "@/components/business/command-bar/command-bar";
 import { DynamicDialog } from "@/components/business/dialog/dynamic-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -202,12 +208,16 @@ const DynamicDataGrid = () => {
 
   if (!data || data.length === 0) {
     return (
-      <Alert>
-        <AlertTitle>No Data</AlertTitle>
-        <AlertDescription>
-          No data available to display in the data grid.
-        </AlertDescription>
-      </Alert>
+      <div className="flex h-full w-full items-center justify-center p-8">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>No Data Available</CardTitle>
+            <CardDescription>
+              No data available to display in the data grid.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     );
   }
 

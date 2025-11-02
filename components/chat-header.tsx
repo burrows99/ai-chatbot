@@ -2,10 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useWindowSize } from "usehooks-ts";
+import { JsonViewer } from "@/components/business/json-viewer/json-viewer";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useAIContext } from "@/lib/ai/context/ai-context";
 import { PlusIcon, TerminalIcon, VercelIcon } from "./icons";
 import { useSidebar } from "./ui/sidebar";
@@ -22,15 +30,10 @@ function PureChatHeader({
 }) {
   const router = useRouter();
   const { open } = useSidebar();
-  const { getContextAsJson } = useAIContext();
+  const { contextData } = useAIContext();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { width: windowWidth } = useWindowSize();
-
-  const handleLogAIContext = () => {
-    const contextJson = getContextAsJson();
-    console.log("AI Context:", contextJson);
-    console.log("AI Context (parsed):", JSON.parse(contextJson));
-  };
 
   return (
     <header className="sticky top-0 flex items-center gap-2 bg-background px-2 py-1.5 md:px-2">
@@ -58,14 +61,30 @@ function PureChatHeader({
         />
       )}
 
-      <Button
-        className="order-3 mr-2 hidden h-8 w-8 p-0 md:flex"
-        onClick={handleLogAIContext}
-        title="Log AI Context"
-        variant="outline"
-      >
-        <TerminalIcon size={16} />
-      </Button>
+      <Dialog onOpenChange={setIsDialogOpen} open={isDialogOpen}>
+        <DialogTrigger asChild>
+          <Button
+            className="order-3 mr-2 hidden h-8 w-8 p-0 md:flex"
+            title="View AI Context"
+            variant="outline"
+          >
+            <TerminalIcon size={16} />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-h-[80vh] max-w-4xl overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>AI Context Data</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-auto">
+            <JsonViewer
+              className="p-4"
+              data={contextData}
+              defaultExpanded={true}
+              rootName="contextData"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Button
         asChild
