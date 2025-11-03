@@ -100,8 +100,8 @@ export function CommandBar({
                 <Tooltip key={buttonIndex}>
                   <TooltipTrigger asChild>
                     <Button
-                      // variant={button.variant || variant}
-                      // size={button.size || size}
+                      variant={variant}
+                      size={size}
                       disabled={button.disabled}
                       onClick={button.callback}
                       className={cn(
