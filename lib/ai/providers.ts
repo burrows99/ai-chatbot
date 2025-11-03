@@ -56,7 +56,7 @@ const xAIProvider = customProvider({
 });
 
 export const myProvider = isTestEnvironment ? providerForTest : 
-// ollamaProvider;
-xAIProvider;
+ollamaProvider;
+// xAIProvider;
 
 export const allProviders = [xAIProvider, ollamaProvider];
