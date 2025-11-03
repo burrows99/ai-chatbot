@@ -11,14 +11,9 @@ type AIContextData = {
         [dataKey: string]: any;
       };
       selectedItems?: string[]; // Added for selection tracking
-    };
-    // Other artifacts can be added here later
-    [artifactKey: string]: {
-      data: {
-        documentId?: string;
-        [dataKey: string]: any;
-      };
-      selectedItems?: string[];
+      ganttSelectedItems?: string[];
+      dataGridSelectedItems?: string[];
+      kanbanSelectedItems?: string[];
     };
   };
   // Other things can be added here later
@@ -51,6 +46,9 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
       canvasArtifact: {
         data: {},
         selectedItems: [],
+        ganttSelectedItems: [],
+        dataGridSelectedItems: [],
+        kanbanSelectedItems: [],   
       },
     },
   });
@@ -71,6 +69,18 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
             value.selectedItems !== undefined
               ? value.selectedItems
               : prev.artifact[artifactType]?.selectedItems || [],
+          ganttSelectedItems:
+            value.ganttSelectedItems !== undefined
+              ? value.ganttSelectedItems
+              : prev.artifact[artifactType]?.ganttSelectedItems || [],
+          dataGridSelectedItems:
+            value.dataGridSelectedItems !== undefined
+              ? value.dataGridSelectedItems
+              : prev.artifact[artifactType]?.dataGridSelectedItems || [],
+          kanbanSelectedItems:
+            value.kanbanSelectedItems !== undefined
+              ? value.kanbanSelectedItems
+              : prev.artifact[artifactType]?.kanbanSelectedItems || [],
         },
       },
     }));
@@ -93,12 +103,66 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const setGanttSelectedItems = (artifactType: string, ganttSelectedIds: string[]) => {
+    setContextData((prev) => ({
+      ...prev,
+      artifact: {
+        ...prev.artifact,
+        [artifactType]: {
+          ...prev.artifact[artifactType],
+          ganttSelectedItems: ganttSelectedIds,
+        },
+      },
+    }));
+  };
+
+  const setDataGridSelectedItems = (artifactType: string, dataGridSelectedIds: string[]) => {
+    setContextData((prev) => ({
+      ...prev,
+      artifact: {
+        ...prev.artifact,
+        [artifactType]: {
+          ...prev.artifact[artifactType],
+          dataGridSelectedItems: dataGridSelectedIds,
+        },
+      },
+    }));
+  };
+
+  const setKanbanSelectedItems = (artifactType: string, kanbanSelectedIds: string[]) => {
+    setContextData((prev) => ({
+      ...prev,
+      artifact: {
+        ...prev.artifact,
+        [artifactType]: {
+          ...prev.artifact[artifactType],
+          kanbanSelectedItems: kanbanSelectedIds,
+        },
+      },
+    }));
+  };
+
   const getSelectedItems = (artifactType: string): string[] => {
     return contextData.artifact[artifactType]?.selectedItems || [];
   };
 
+  const getGanttSelectedItems = (artifactType: string): string[] => {
+    return contextData.artifact[artifactType]?.ganttSelectedItems || [];
+  };
+
+  const getDataGridSelectedItems = (artifactType: string): string[] => {
+    return contextData.artifact[artifactType]?.dataGridSelectedItems || [];
+  };
+
+  const getKanbanSelectedItems = (artifactType: string): string[] => {
+    return contextData.artifact[artifactType]?.kanbanSelectedItems || [];
+  };
+
   const clearSelectedItems = (artifactType: string) => {
     setSelectedItems(artifactType, []);
+    setGanttSelectedItems(artifactType, []);
+    setDataGridSelectedItems(artifactType, []);
+    setKanbanSelectedItems(artifactType, []);
   };
 
   const toggleItemSelection = (artifactType: string, itemId: string) => {
@@ -125,6 +189,12 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     contextData,
     setSelectedItems,
     getSelectedItems,
+    setGanttSelectedItems,
+    getGanttSelectedItems,
+    setDataGridSelectedItems,
+    getDataGridSelectedItems,
+    setKanbanSelectedItems,
+    getKanbanSelectedItems,
     clearSelectedItems,
     toggleItemSelection,
   };

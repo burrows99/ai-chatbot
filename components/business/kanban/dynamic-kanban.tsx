@@ -62,9 +62,9 @@ const DynamicKanban = () => {
   const firstRecord = data[0] ?? {};
 
   // Get selected items from context
-  const selectedItems = useMemo(() => {
-    return contextData?.artifact?.canvasArtifact?.selectedItems || [];
-  }, [contextData?.artifact?.canvasArtifact?.selectedItems]);
+  const kanbanSelectedItems = useMemo(() => {
+    return contextData?.artifact?.canvasArtifact?.kanbanSelectedItems || [];
+  }, [contextData?.artifact?.canvasArtifact?.kanbanSelectedItems]);
 
   const columns = useMemo(() => {
     return extractColumns(data, firstRecord);
@@ -205,14 +205,14 @@ const DynamicKanban = () => {
 
       if (isCtrlOrCmd) {
         // Toggle selection
-        if (selectedItems.includes(featureId)) {
-          newSelection = selectedItems.filter((id: string) => id !== featureId);
+        if (kanbanSelectedItems.includes(featureId)) {
+          newSelection = kanbanSelectedItems.filter((id: string) => id !== featureId);
         } else {
-          newSelection = [...selectedItems, featureId];
+          newSelection = [...kanbanSelectedItems, featureId];
         }
-      } else if (isShift && selectedItems.length > 0) {
+      } else if (isShift && kanbanSelectedItems.length > 0) {
         // Range selection
-        const lastSelected = selectedItems.at(-1);
+        const lastSelected = kanbanSelectedItems.at(-1);
         const lastIndex = features.findIndex((f) => f.id === lastSelected);
         const currentIndex = features.findIndex((f) => f.id === featureId);
 
@@ -222,7 +222,9 @@ const DynamicKanban = () => {
           const rangeIds = features.slice(start, end + 1).map((f) => f.id);
 
           // Combine with existing selection
-          newSelection = Array.from(new Set([...selectedItems, ...rangeIds]));
+          newSelection = Array.from(
+            new Set([...kanbanSelectedItems, ...rangeIds])
+          );
         } else {
           newSelection = [featureId];
         }
@@ -231,9 +233,9 @@ const DynamicKanban = () => {
         newSelection = [featureId];
       }
 
-      setArtifactData("canvasArtifact", { selectedItems: newSelection });
+      setArtifactData("canvasArtifact", { kanbanSelectedItems: newSelection });
     },
-    [selectedItems, features, setArtifactData]
+    [kanbanSelectedItems, features, setArtifactData]
   );
 
   // Create standard handlers using shared utility
@@ -241,7 +243,8 @@ const DynamicKanban = () => {
     return createStandardHandlers({
       contextData,
       setArtifactData,
-      selectedItems,
+      selectedItems: kanbanSelectedItems,
+      type: "kanban",
       idField,
       setEditingData,
       setEditDialogOpen,
@@ -249,7 +252,7 @@ const DynamicKanban = () => {
       setAddDialogOpen,
       data,
     });
-  }, [contextData, setArtifactData, selectedItems, idField, data]);
+  }, [contextData, setArtifactData, kanbanSelectedItems, idField, data]);
 
   const {
     handleEdit,
@@ -263,9 +266,9 @@ const DynamicKanban = () => {
   const buttonGroups = useMemo(() => {
     return createStandardButtonGroups(
       { handleAdd, handleEdit, deleteSelectedItems },
-      selectedItems
+      kanbanSelectedItems
     );
-  }, [handleAdd, handleEdit, deleteSelectedItems, selectedItems]);
+  }, [handleAdd, handleEdit, deleteSelectedItems, kanbanSelectedItems]);
 
   if (error) {
     return (
@@ -344,7 +347,7 @@ const DynamicKanban = () => {
               </KanbanHeader>
               <KanbanCards id={column.id}>
                 {(feature: (typeof features)[number]) => {
-                  const isSelected = selectedItems.includes(feature.id);
+                  const isSelected = kanbanSelectedItems.includes(feature.id);
                   return (
                     <KanbanCard
                       className={cn(isSelected && "ring-2 ring-primary")}

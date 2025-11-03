@@ -53,9 +53,9 @@ const DynamicDataGrid = () => {
   const firstRecord = data[0] ?? {};
 
   // Get selected items from context
-  const selectedItems = useMemo(() => {
-    return contextData?.artifact?.canvasArtifact?.selectedItems || [];
-  }, [contextData?.artifact?.canvasArtifact?.selectedItems]);
+  const dataGridSelectedItems = useMemo(() => {
+    return contextData?.artifact?.canvasArtifact?.dataGridSelectedItems || [];
+  }, [contextData?.artifact?.canvasArtifact?.dataGridSelectedItems]);
 
   const fieldMappings = useMemo(
     () => detectFieldMappings(firstRecord),
@@ -113,7 +113,7 @@ const DynamicDataGrid = () => {
   // Handle row selection
   const handleRowSelect = useCallback(
     (itemId: string, checked: boolean) => {
-      const currentSelected = selectedItems || [];
+      const currentSelected = dataGridSelectedItems || [];
       let newSelected: string[];
 
       if (checked) {
@@ -122,16 +122,16 @@ const DynamicDataGrid = () => {
         newSelected = currentSelected.filter((id: string) => id !== itemId);
       }
 
-      setArtifactData("canvasArtifact", { selectedItems: newSelected });
+      setArtifactData("canvasArtifact", { dataGridSelectedItems: newSelected });
     },
-    [selectedItems, setArtifactData]
+    [dataGridSelectedItems, setArtifactData]
   );
 
   // Handle select all
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       const newSelected = checked ? gridItems.map((item) => item.id) : [];
-      setArtifactData("canvasArtifact", { selectedItems: newSelected });
+      setArtifactData("canvasArtifact", { dataGridSelectedItems: newSelected });
     },
     [gridItems, setArtifactData]
   );
@@ -140,7 +140,8 @@ const DynamicDataGrid = () => {
   const handlers = createStandardHandlers({
     contextData,
     setArtifactData,
-    selectedItems,
+    selectedItems: dataGridSelectedItems, 
+    type: "dataGrid",
     idField,
     setEditingData,
     setEditDialogOpen,
@@ -164,7 +165,7 @@ const DynamicDataGrid = () => {
       handleEdit,
       deleteSelectedItems,
     },
-    selectedItems
+    dataGridSelectedItems
   );
 
   // Format cell value based on field type
@@ -193,9 +194,10 @@ const DynamicDataGrid = () => {
 
   // Check if all items are selected
   const isAllSelected =
-    gridItems.length > 0 && selectedItems.length === gridItems.length;
+    gridItems.length > 0 && dataGridSelectedItems.length === gridItems.length;
   const isIndeterminate =
-    selectedItems.length > 0 && selectedItems.length < gridItems.length;
+    dataGridSelectedItems.length > 0 &&
+    dataGridSelectedItems.length < gridItems.length;
 
   if (error) {
     return (
@@ -253,7 +255,7 @@ const DynamicDataGrid = () => {
           </TableHeader>
           <TableBody>
             {gridItems.map((item) => {
-              const isSelected = selectedItems.includes(item.id);
+              const isSelected = dataGridSelectedItems.includes(item.id);
               return (
                 <TableRow
                   className={cn("cursor-pointer", isSelected && "bg-muted/50")}

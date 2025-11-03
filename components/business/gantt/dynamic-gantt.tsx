@@ -76,9 +76,9 @@ const DynamicGantt = () => {
   const { data, error } = parseResult;
   const firstRecord = data[0] ?? {};
 
-  const selectedItems = useMemo(() => {
-    return contextData?.artifact?.canvasArtifact?.selectedItems || [];
-  }, [contextData?.artifact?.canvasArtifact?.selectedItems]);
+  const ganttSelectedItems = useMemo(() => {
+    return contextData?.artifact?.canvasArtifact?.ganttSelectedItems || [];
+  }, [contextData?.artifact?.canvasArtifact?.ganttSelectedItems]);
 
   const extractColumnsCallback = useCallback(
     (dataArray: any[]): GanttStatus[] => {
@@ -181,17 +181,17 @@ const DynamicGantt = () => {
       const isCtrlOrCmd = event.ctrlKey || event.metaKey;
       let newSelection: string[];
       if (isCtrlOrCmd) {
-        if (selectedItems.includes(featureId)) {
-          newSelection = selectedItems.filter((id: string) => id !== featureId);
+        if (ganttSelectedItems.includes(featureId)) {
+          newSelection = ganttSelectedItems.filter((id: string) => id !== featureId);
         } else {
-          newSelection = [...selectedItems, featureId];
+          newSelection = [...ganttSelectedItems, featureId];
         }
       } else {
         newSelection = [featureId];
       }
-      setArtifactData("canvasArtifact", { selectedItems: newSelection });
+      setArtifactData("canvasArtifact", { ganttSelectedItems: newSelection });
     },
-    [selectedItems, setArtifactData]
+    [ganttSelectedItems, setArtifactData]
   );
 
   // Create standard handlers using shared utility
@@ -199,7 +199,8 @@ const DynamicGantt = () => {
     return createStandardHandlers({
       contextData,
       setArtifactData,
-      selectedItems,
+      selectedItems: ganttSelectedItems,
+      type: "gantt",
       idField,
       setEditingData,
       setEditDialogOpen,
@@ -207,7 +208,7 @@ const DynamicGantt = () => {
       setAddDialogOpen,
       data,
     });
-  }, [contextData, setArtifactData, selectedItems, idField, data]);
+  }, [contextData, setArtifactData, ganttSelectedItems, idField, data]);
 
   const {
     handleEdit,
@@ -221,9 +222,9 @@ const DynamicGantt = () => {
   const buttonGroups = useMemo(() => {
     return createStandardButtonGroups(
       { handleAdd, handleEdit, deleteSelectedItems },
-      selectedItems
+      ganttSelectedItems
     );
-  }, [handleAdd, handleEdit, deleteSelectedItems, selectedItems]);
+  }, [handleAdd, handleEdit, deleteSelectedItems, ganttSelectedItems]);
 
   const handleViewFeature = (id: string) =>
     console.log(`Feature selected: ${id}`);
@@ -246,7 +247,7 @@ const DynamicGantt = () => {
 
     setArtifactData("canvasArtifact", {
       data: updatedData,
-      selectedItems: selectedItems.filter(
+      ganttSelectedItems: ganttSelectedItems.filter(
         (selectedId: string) => selectedId !== id
       ),
     });
@@ -342,7 +343,7 @@ const DynamicGantt = () => {
               ([groupKey, groupFeatures]) => (
                 <GanttSidebarGroup key={groupKey} name={groupKey}>
                   {groupFeatures.map((feature) => {
-                    const isSelected = selectedItems.includes(feature.id);
+                    const isSelected = ganttSelectedItems.includes(feature.id);
                     return (
                       <GanttSidebarItem
                         className={cn(isSelected && "bg-secondary")}
@@ -365,7 +366,7 @@ const DynamicGantt = () => {
                 ([groupKey, groupFeatures]) => (
                   <GanttFeatureListGroup key={groupKey}>
                     {groupFeatures.map((feature) => {
-                      const isSelected = selectedItems.includes(feature.id);
+                      const isSelected = ganttSelectedItems.includes(feature.id);
                       return (
                         <div className="flex" key={feature.id}>
                           <ContextMenu>
