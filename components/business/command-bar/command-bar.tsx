@@ -143,10 +143,12 @@ export function CommandBar({
                 )}
               />
             )}
-            <div className={cn(
-              "min-w-0",
-              buttonGroups.length > 0 ? "w-64" : "flex-1"
-            )}>
+            <div
+              className={cn(
+                "min-w-0",
+                buttonGroups.length > 0 ? "w-64" : "flex-1"
+              )}
+            >
               <InputGroup>
                 <InputGroupInput
                   placeholder={searchPlaceholder}

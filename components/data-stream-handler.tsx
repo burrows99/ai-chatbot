@@ -7,7 +7,7 @@ import { artifactDefinitions } from "./artifact";
 import { useDataStream } from "./data-stream-provider";
 
 export function DataStreamHandler() {
-  const { dataStream,setDataStream } = useDataStream();
+  const { dataStream, setDataStream } = useDataStream();
   const { setCanvasArtifactData, setCanvasArtifactConfig } = useAIContext();
 
   const { artifact, setArtifact, setMetadata } = useArtifact();
@@ -96,7 +96,15 @@ export function DataStreamHandler() {
         }
       });
     }
-  }, [dataStream, setArtifact, setMetadata, artifact, setCanvasArtifactData, setCanvasArtifactConfig, setDataStream]);
+  }, [
+    dataStream,
+    setArtifact,
+    setMetadata,
+    artifact,
+    setCanvasArtifactData,
+    setCanvasArtifactConfig,
+    setDataStream,
+  ]);
 
   return null;
 }

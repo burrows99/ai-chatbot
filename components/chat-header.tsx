@@ -30,7 +30,13 @@ function PureChatHeader({
 }) {
   const router = useRouter();
   const { open } = useSidebar();
-  const { canvasArtifactData, canvasArtifactConfig, ganttSelectedItems, dataGridSelectedItems, kanbanSelectedItems } = useAIContext();
+  const {
+    canvasArtifactData,
+    canvasArtifactConfig,
+    ganttSelectedItems,
+    dataGridSelectedItems,
+    kanbanSelectedItems,
+  } = useAIContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { width: windowWidth } = useWindowSize();

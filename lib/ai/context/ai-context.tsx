@@ -17,8 +17,12 @@ export type AIContextValue = {
   ganttSelectedItems: string[];
   dataGridSelectedItems: string[];
   kanbanSelectedItems: string[];
-  setCanvasArtifactData: React.Dispatch<React.SetStateAction<CanvasArtifactData>>;
-  setCanvasArtifactConfig: React.Dispatch<React.SetStateAction<CanvasArtifactConfig>>;
+  setCanvasArtifactData: React.Dispatch<
+    React.SetStateAction<CanvasArtifactData>
+  >;
+  setCanvasArtifactConfig: React.Dispatch<
+    React.SetStateAction<CanvasArtifactConfig>
+  >;
   setGanttSelections: React.Dispatch<React.SetStateAction<string[]>>;
   setDataGridSelections: React.Dispatch<React.SetStateAction<string[]>>;
   setKanbanSelections: React.Dispatch<React.SetStateAction<string[]>>;
@@ -27,14 +31,17 @@ export type AIContextValue = {
 const AIContext = createContext<AIContextValue | undefined>(undefined);
 
 export function AIContextProvider({ children }: { children: ReactNode }) {
-  const [canvasArtifactData, setCanvasArtifactData] = useState<CanvasArtifactData>([]);
-  const [canvasArtifactConfig, setCanvasArtifactConfig] = useState<CanvasArtifactConfig>({});
+  const [canvasArtifactData, setCanvasArtifactData] =
+    useState<CanvasArtifactData>([]);
+  const [canvasArtifactConfig, setCanvasArtifactConfig] =
+    useState<CanvasArtifactConfig>({});
   const [ganttSelectedItems, setGanttSelections] = useState<string[]>([]);
   const [dataGridSelectedItems, setDataGridSelections] = useState<string[]>([]);
   const [kanbanSelectedItems, setKanbanSelections] = useState<string[]>([]);
 
   // Memo to keep value stable across renders unless deps change
-  const value = useMemo<AIContextValue>(() => ({
+  const value = useMemo<AIContextValue>(
+    () => ({
       canvasArtifactData,
       canvasArtifactConfig,
       ganttSelectedItems,

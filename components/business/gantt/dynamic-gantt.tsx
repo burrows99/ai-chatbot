@@ -3,7 +3,14 @@
 "use client";
 
 import groupBy from "lodash.groupby";
-import { EyeIcon, LinkIcon, TrashIcon, ZoomInIcon, ZoomOutIcon, MaximizeIcon } from "lucide-react";
+import {
+  EyeIcon,
+  LinkIcon,
+  MaximizeIcon,
+  TrashIcon,
+  ZoomInIcon,
+  ZoomOutIcon,
+} from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
   createStandardButtonGroups,
@@ -29,9 +36,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import type {
-  GanttStatus,
-} from "@/components/ui/shadcn-io/gantt";
+import type { GanttStatus } from "@/components/ui/shadcn-io/gantt";
 import {
   GanttCreateMarkerTrigger,
   GanttFeatureItem,
@@ -171,7 +176,9 @@ const DynamicGantt = () => {
       let newSelection: string[];
       if (isCtrlOrCmd) {
         if (ganttSelectedItems.includes(featureId)) {
-          newSelection = ganttSelectedItems.filter((id: string) => id !== featureId);
+          newSelection = ganttSelectedItems.filter(
+            (id: string) => id !== featureId
+          );
         } else {
           newSelection = [...ganttSelectedItems, featureId];
         }
@@ -218,11 +225,11 @@ const DynamicGantt = () => {
   } = standardHandlers;
 
   const handleZoomIn = useCallback(() => {
-    setZoomLevel(prev => Math.min(prev + 25, 500));
+    setZoomLevel((prev) => Math.min(prev + 25, 500));
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    setZoomLevel(prev => Math.max(prev - 25, 25));
+    setZoomLevel((prev) => Math.max(prev - 25, 25));
   }, []);
 
   const handleZoomToFit = useCallback(() => {
@@ -244,7 +251,7 @@ const DynamicGantt = () => {
       },
       {
         label: "",
-        tooltip: "Zoom Out", 
+        tooltip: "Zoom Out",
         callback: handleZoomOut,
         icon: <ZoomOutIcon className="h-4 w-4" />,
       },
@@ -257,7 +264,15 @@ const DynamicGantt = () => {
     ];
 
     return [...standardGroups, zoomGroup];
-  }, [handleAdd, handleEdit, deleteSelectedItems, ganttSelectedItems, handleZoomIn, handleZoomOut, handleZoomToFit]);
+  }, [
+    handleAdd,
+    handleEdit,
+    deleteSelectedItems,
+    ganttSelectedItems,
+    handleZoomIn,
+    handleZoomOut,
+    handleZoomToFit,
+  ]);
 
   const handleViewFeature = (id: string) =>
     console.log(`Feature selected: ${id}`);
@@ -276,7 +291,9 @@ const DynamicGantt = () => {
       return itemId !== id;
     });
     setCanvasArtifactData(updatedData);
-    setGanttSelections(ganttSelectedItems.filter((selectedId: string) => selectedId !== id));
+    setGanttSelections(
+      ganttSelectedItems.filter((selectedId: string) => selectedId !== id)
+    );
   };
 
   const handleCreateMarker = (date: Date) =>
@@ -378,7 +395,9 @@ const DynamicGantt = () => {
                 ([groupKey, groupFeatures]) => (
                   <GanttFeatureListGroup key={groupKey}>
                     {groupFeatures.map((feature) => {
-                      const isSelected = ganttSelectedItems.includes(feature.id);
+                      const isSelected = ganttSelectedItems.includes(
+                        feature.id
+                      );
                       return (
                         <div className="flex" key={feature.id}>
                           <ContextMenu>

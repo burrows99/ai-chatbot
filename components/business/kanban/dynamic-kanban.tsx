@@ -63,7 +63,8 @@ const DynamicKanban = () => {
   const firstRecord = canvasArtifactData?.[0] ?? {};
 
   // Get selected items from context
-  const handleCardClick = useCallback((featureId: string, event: React.PointerEvent) => {
+  const handleCardClick = useCallback(
+    (featureId: string, event: React.PointerEvent) => {
       if (event.ctrlKey || event.metaKey) {
         // Multi-select
         setKanbanSelections((prev) =>
@@ -115,7 +116,8 @@ const DynamicKanban = () => {
           item[startDateField]?.value || new Date().toISOString().split("T")[0];
         const endDateValue =
           item[endDateField]?.value || new Date().toISOString().split("T")[0];
-        const columnValue = item[columnField]?.value || columns[0]?.id || "Default";
+        const columnValue =
+          item[columnField]?.value || columns[0]?.id || "Default";
         const descriptionValue = item[descriptionField]?.value || "";
         return {
           id: String(idValue),
@@ -146,7 +148,8 @@ const DynamicKanban = () => {
     fieldMappings,
   ]);
 
-  const getUpdatedContentData = useCallback((
+  const getUpdatedContentData = useCallback(
+    (
       canvasArtifactData: Record<string, any>[],
       updatedFeatures: KanbanFeature[],
       fieldMappings: {
@@ -177,8 +180,8 @@ const DynamicKanban = () => {
         // If your features are keyed by the raw id field, use this:
         const recordKey = String(record?.[idField]?.value ?? `item-${index}`);
         const feature = featureMap.get(recordKey);
-        if (!feature) { 
-          return record; 
+        if (!feature) {
+          return record;
         }
 
         // Update column field immutably
@@ -189,9 +192,12 @@ const DynamicKanban = () => {
             : { value: feature.column },
         };
       });
-    }, []);
+    },
+    []
+  );
 
-  const onDataChange = useCallback((updatedFeatures: KanbanFeature[]) => {
+  const onDataChange = useCallback(
+    (updatedFeatures: KanbanFeature[]) => {
       const updatedCanvasArtifactData = getUpdatedContentData(
         canvasArtifactData,
         updatedFeatures,
@@ -199,7 +205,12 @@ const DynamicKanban = () => {
       );
       setCanvasArtifactData(updatedCanvasArtifactData);
     },
-    [ fieldMappings, getUpdatedContentData, canvasArtifactData, setCanvasArtifactData ]
+    [
+      fieldMappings,
+      getUpdatedContentData,
+      canvasArtifactData,
+      setCanvasArtifactData,
+    ]
   );
 
   const standardHandlers = useMemo(() => {

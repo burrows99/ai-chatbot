@@ -111,9 +111,9 @@ export const createEmptyRecord = (data: any[]): any => {
   if (!data || data.length === 0) {
     return null;
   }
-  
+
   const clonedRecord = JSON.parse(JSON.stringify(data[0]));
-  
+
   for (const fieldKey of Object.keys(clonedRecord)) {
     if (
       clonedRecord[fieldKey] &&
@@ -218,7 +218,7 @@ export const filterDataBySearch = (
       if (!field) {
         return false;
       }
-      
+
       if (typeof field === "string") {
         return field.toLowerCase().includes(query);
       }
@@ -261,7 +261,7 @@ export const createStandardHandlers = (params: {
       return;
     }
 
-    const [ selectedItemId ] = selectedItems;
+    const [selectedItemId] = selectedItems;
     const selectedItem = findSelectedItem(
       canvasArtifactData,
       selectedItemId,
@@ -312,7 +312,11 @@ export const createStandardHandlers = (params: {
       return;
     }
 
-    const updatedData = deleteFromDataArray(canvasArtifactData, selectedItems, idField);
+    const updatedData = deleteFromDataArray(
+      canvasArtifactData,
+      selectedItems,
+      idField
+    );
     setCanvasArtifactData(updatedData);
     clearSelections();
   };

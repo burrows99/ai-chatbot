@@ -3,6 +3,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import type { FieldConfig } from "@/artifacts/canvas/blueprint";
 import {
   createStandardButtonGroups,
   createStandardHandlers,
@@ -29,7 +30,6 @@ import {
 } from "@/components/ui/table";
 import { useAIContext } from "@/lib/ai/context/ai-context";
 import { cn } from "@/lib/utils";
-import type { FieldConfig } from "@/artifacts/canvas/blueprint";
 
 type DataGridItem = {
   id: string;
@@ -65,7 +65,11 @@ const DynamicDataGrid = () => {
     }
 
     try {
-      const filteredData = filterDataBySearch(canvasArtifactData, searchQuery, fieldMappings);
+      const filteredData = filterDataBySearch(
+        canvasArtifactData,
+        searchQuery,
+        fieldMappings
+      );
 
       return filteredData.map((item: any, index: number) => {
         const idValue = item[idField]?.value || `item-${index}`;
@@ -185,7 +189,7 @@ const DynamicDataGrid = () => {
         return value;
     }
   }, []);
-  
+
   const isAllSelected =
     gridItems.length > 0 && dataGridSelectedItems.length === gridItems.length;
   const isIndeterminate =
@@ -266,7 +270,7 @@ const DynamicDataGrid = () => {
           </TableBody>
         </Table>
       </div>
-      
+
       {editingData && (
         <DynamicDialog
           data={editingData}
