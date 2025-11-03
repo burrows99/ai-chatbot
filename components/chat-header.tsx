@@ -30,7 +30,7 @@ function PureChatHeader({
 }) {
   const router = useRouter();
   const { open } = useSidebar();
-  const { contextData } = useAIContext();
+  const { canvasArtifactData, canvasArtifactConfig, ganttSelectedItems, dataGridSelectedItems, kanbanSelectedItems } = useAIContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { width: windowWidth } = useWindowSize();
@@ -78,9 +78,17 @@ function PureChatHeader({
           <div className="max-h-[60vh] overflow-auto">
             <JsonViewer
               className="p-4"
-              data={contextData}
+              data={{
+                canvasArtifactData,
+                canvasArtifactConfig,
+                selections: {
+                  ganttSelectedItems,
+                  dataGridSelectedItems,
+                  kanbanSelectedItems,
+                },
+              }}
               defaultExpanded={true}
-              rootName="contextData"
+              rootName="AIContext"
             />
           </div>
         </DialogContent>

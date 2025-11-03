@@ -1,110 +1,69 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 
-// Simple JSON object structure for storing AI context data
-type AIContextData = {
-  artifact: {
-    canvasArtifact: {
-      data: {
-        documentId?: string;
-        [dataKey: string]: any;
-      };
-      ganttSelectedItems?: string[];
-      dataGridSelectedItems?: string[];
-      kanbanSelectedItems?: string[];
-    };
-  };
-  // Other things can be added here later
-  [contextKey: string]: any;
+export type CanvasArtifactData = Record<string, unknown>[];
+export type CanvasArtifactConfig = Record<string, unknown>;
+
+export type AIContextValue = {
+  canvasArtifactData: CanvasArtifactData;
+  canvasArtifactConfig: CanvasArtifactConfig;
+  ganttSelectedItems: string[];
+  dataGridSelectedItems: string[];
+  kanbanSelectedItems: string[];
+  setCanvasArtifactData: React.Dispatch<React.SetStateAction<CanvasArtifactData>>;
+  setCanvasArtifactConfig: React.Dispatch<React.SetStateAction<CanvasArtifactConfig>>;
+  setGanttSelections: React.Dispatch<React.SetStateAction<string[]>>;
+  setDataGridSelections: React.Dispatch<React.SetStateAction<string[]>>;
+  setKanbanSelections: React.Dispatch<React.SetStateAction<string[]>>;
 };
 
-// Context methods
-type AIContextMethods = {
-  setArtifactData: (artifactType: string, value: any) => void;
-  getArtifactData: (artifactType: string) => any;
-  getContextAsJson: () => string;
-  contextData: AIContextData;
-  // Selection-specific methods
-  getSelectedItems: (artifactType: string) => string[];
-  clearSelectedItems: (artifactType: string) => void;
-  toggleItemSelection: (artifactType: string, itemId: string) => void;
-};
+const AIContext = createContext<AIContextValue | undefined>(undefined);
 
-// Combined context interface
-interface AIContextValue extends AIContextData, AIContextMethods {}
-
-// Create the context
-const AIContext = createContext<AIContextValue | null>(null);
-
-// Provider component
 export function AIContextProvider({ children }: { children: ReactNode }) {
-  const [contextData, setContextData] = useState<AIContextData>({
-    artifact: {
-      canvasArtifact: {
-        data: {},
-        ganttSelectedItems: [],
-        dataGridSelectedItems: [],
-        kanbanSelectedItems: [],   
-      },
-    },
-  });
+  const [canvasArtifactData, setCanvasArtifactData] = useState<CanvasArtifactData>([]);
+  const [canvasArtifactConfig, setCanvasArtifactConfig] = useState<CanvasArtifactConfig>({});
+  const [ganttSelectedItems, setGanttSelections] = useState<string[]>([]);
+  const [dataGridSelectedItems, setDataGridSelections] = useState<string[]>([]);
+  const [kanbanSelectedItems, setKanbanSelections] = useState<string[]>([]);
 
-  const setArtifactData = (artifactType: string, value: any) => {
-    setContextData((prev) => ({
-      ...prev,
-      artifact: {
-        ...prev.artifact,
-        [artifactType]: {
-          ...prev.artifact[artifactType],
-          data: {
-            ...prev.artifact[artifactType]?.data,
-            ...value,
-          },
-          // Preserve selectedItems if not explicitly updated
-          ganttSelectedItems:
-            value.ganttSelectedItems !== undefined
-              ? value.ganttSelectedItems
-              : prev.artifact[artifactType]?.ganttSelectedItems || [],
-          dataGridSelectedItems:
-            value.dataGridSelectedItems !== undefined
-              ? value.dataGridSelectedItems
-              : prev.artifact[artifactType]?.dataGridSelectedItems || [],
-          kanbanSelectedItems:
-            value.kanbanSelectedItems !== undefined
-              ? value.kanbanSelectedItems
-              : prev.artifact[artifactType]?.kanbanSelectedItems || [],
-        },
-      },
-    }));
-  };
-
-  const getArtifactData = (artifactType: string) => {
-    return contextData.artifact[artifactType]?.data;
-  };
-
-  const contextValue: AIContextValue = {
-    ...contextData,
-    setArtifactData,
-    getArtifactData,
-    contextData,
-  };
-
-  return (
-    <AIContext.Provider value={contextValue}>{children}</AIContext.Provider>
+  // Memo to keep value stable across renders unless deps change
+  const value = useMemo<AIContextValue>(() => ({
+      canvasArtifactData,
+      canvasArtifactConfig,
+      ganttSelectedItems,
+      dataGridSelectedItems,
+      kanbanSelectedItems,
+      setCanvasArtifactData,
+      setCanvasArtifactConfig,
+      setGanttSelections,
+      setDataGridSelections,
+      setKanbanSelections,
+    }),
+    [
+      canvasArtifactData,
+      canvasArtifactConfig,
+      ganttSelectedItems,
+      dataGridSelectedItems,
+      kanbanSelectedItems,
+    ]
   );
+
+  return <AIContext.Provider value={value}>{children}</AIContext.Provider>;
 }
 
-// Hook to use the AI context
-export function useAIContext() {
-  const context = useContext(AIContext);
-
-  if (!context) {
+export function useAIContext(): AIContextValue {
+  const ctx = useContext(AIContext);
+  if (!ctx) {
     throw new Error("useAIContext must be used within an AIContextProvider");
   }
-
-  return context;
+  return ctx;
 }
 
-// Export types
-export type { AIContextData, AIContextMethods, AIContextValue };
+export type { AIContextValue as AIContextMethods };

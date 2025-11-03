@@ -29,28 +29,6 @@ export type FieldMappings = {
   descriptionField: string;
 };
 
-// Common data parsing utility
-export const parseArtifactData = (contextData: any) => {
-  try {
-    const artifactDataRaw = contextData?.artifact?.canvasArtifact?.data;
-    const contentData = artifactDataRaw?.data || artifactDataRaw;
-    const dataArray = Array.isArray(contentData) ? contentData : [];
-
-    return {
-      success: true,
-      data: dataArray,
-      error: null,
-    };
-  } catch (err) {
-    return {
-      success: false,
-      data: [],
-      error: err instanceof Error ? err.message : "Invalid format",
-    };
-  }
-};
-
-// Extract columns from data array
 export const extractColumns = (
   dataArray: any[],
   firstRecord: any
@@ -82,7 +60,6 @@ export const extractColumns = (
   return [];
 };
 
-// Detect field mappings from sample record
 export const detectFieldMappings = (sampleRecord: any): FieldMappings => {
   const idField =
     Object.keys(sampleRecord).find(
@@ -130,16 +107,13 @@ export const detectFieldMappings = (sampleRecord: any): FieldMappings => {
   };
 };
 
-// Create a cloned record with cleared values for adding new items
 export const createEmptyRecord = (data: any[]): any => {
   if (!data || data.length === 0) {
     return null;
   }
-
-  // Clone the first record
+  
   const clonedRecord = JSON.parse(JSON.stringify(data[0]));
-
-  // Clear all field values
+  
   for (const fieldKey of Object.keys(clonedRecord)) {
     if (
       clonedRecord[fieldKey] &&
@@ -153,31 +127,29 @@ export const createEmptyRecord = (data: any[]): any => {
   return clonedRecord;
 };
 
-// Find selected item from data array
 export const findSelectedItem = (
-  data: any[],
+  canvasArtifactData: Record<string, unknown>[],
   selectedItemId: string,
   idField: string
 ): any => {
-  return data.find((item: any, index: number) => {
-    const itemId = String(item[idField]?.value || `item-${index}`);
+  return canvasArtifactData.find((item: any, index: number) => {
+    const itemId = String(item?.[idField]?.value ?? `item-${index}`);
     return itemId === selectedItemId;
   });
 };
 
-// Update data array with edited item
 export const updateDataArray = (
-  currentData: any[],
+  currentData: Record<string, unknown>[],
   selectedItemId: string,
-  updatedFormData: any,
+  updatedFormData: Record<string, unknown>,
   idField: string
-): any[] => {
+): Record<string, unknown>[] => {
   if (!Array.isArray(currentData)) {
     return currentData;
   }
 
-  return currentData.map((item: any, index: number) => {
-    const itemId = String(item[idField]?.value || `item-${index}`);
+  return currentData.map((item: Record<string, unknown>, index: number) => {
+    const itemId = String(item?.[idField]?.value ?? `item-${index}`);
     if (itemId === selectedItemId) {
       return updatedFormData;
     }
@@ -185,8 +157,10 @@ export const updateDataArray = (
   });
 };
 
-// Add new item to data array
-export const addToDataArray = (currentData: any[], newFormData: any): any[] => {
+export const addToDataArray = (
+  currentData: Record<string, unknown>[],
+  newFormData: Record<string, unknown>
+): Record<string, unknown>[] => {
   if (!Array.isArray(currentData)) {
     return currentData;
   }
@@ -194,23 +168,21 @@ export const addToDataArray = (currentData: any[], newFormData: any): any[] => {
   return [...currentData, newFormData];
 };
 
-// Delete selected items from data array
 export const deleteFromDataArray = (
-  currentData: any[],
+  currentData: Record<string, unknown>[],
   selectedItems: string[],
   idField: string
-): any[] => {
+): Record<string, unknown>[] => {
   if (!Array.isArray(currentData)) {
     return currentData;
   }
 
-  return currentData.filter((item: any, index: number) => {
-    const itemId = String(item[idField]?.value || `item-${index}`);
+  return currentData.filter((item: Record<string, unknown>, index: number) => {
+    const itemId = String(item?.[idField]?.value ?? `item-${index}`);
     return !selectedItems.includes(itemId);
   });
 };
 
-// Common date formatters
 export const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
@@ -222,20 +194,18 @@ export const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
 });
 
-// Filter data based on search query
 export const filterDataBySearch = (
-  data: any[],
+  canvasArtifactData: Record<string, unknown>[],
   searchQuery: string,
   fieldMappings: FieldMappings
-): any[] => {
+): Record<string, unknown>[] => {
   if (!searchQuery || !searchQuery.trim()) {
-    return data;
+    return canvasArtifactData;
   }
 
   const query = searchQuery.toLowerCase().trim();
 
-  return data.filter((item) => {
-    // Search in all mapped fields
+  return canvasArtifactData.filter((item: Record<string, unknown>) => {
     const fieldsToSearch = [
       fieldMappings.idField,
       fieldMappings.startDateField,
@@ -248,8 +218,7 @@ export const filterDataBySearch = (
       if (!field) {
         return false;
       }
-
-      // Handle different field types
+      
       if (typeof field === "string") {
         return field.toLowerCase().includes(query);
       }
@@ -259,34 +228,32 @@ export const filterDataBySearch = (
         return value.includes(query);
       }
 
-      // Fallback to string conversion
       return String(field).toLowerCase().includes(query);
     });
   });
 };
 
-// Shared button group utilities
 export const createStandardHandlers = (params: {
-  contextData: any;
-  setArtifactData: (key: string, data: any) => void;
+  setCanvasArtifactData: (updated: Record<string, unknown>[]) => void;
+  clearSelections: () => void;
   selectedItems: string[];
   idField: string;
-  setEditingData: (data: any) => void;
+  setEditingData: (data: Record<string, unknown>) => void;
   setEditDialogOpen: (open: boolean) => void;
-  setAddingData: (data: any) => void;
+  setAddingData: (data: Record<string, unknown>) => void;
   setAddDialogOpen: (open: boolean) => void;
-  data: any[];
+  canvasArtifactData: Record<string, unknown>[];
 }) => {
   const {
-    contextData,
-    setArtifactData,
+    setCanvasArtifactData,
+    clearSelections,
     selectedItems,
     idField,
     setEditingData,
     setEditDialogOpen,
     setAddingData,
     setAddDialogOpen,
-    data,
+    canvasArtifactData,
   } = params;
 
   const handleEdit = () => {
@@ -294,8 +261,12 @@ export const createStandardHandlers = (params: {
       return;
     }
 
-    const selectedItemId = selectedItems[0];
-    const selectedItem = findSelectedItem(data, selectedItemId, idField);
+    const [ selectedItemId ] = selectedItems;
+    const selectedItem = findSelectedItem(
+      canvasArtifactData,
+      selectedItemId,
+      idField
+    );
 
     if (selectedItem) {
       setEditingData(selectedItem);
@@ -304,38 +275,32 @@ export const createStandardHandlers = (params: {
   };
 
   const handleAdd = () => {
-    const emptyRecord = createEmptyRecord(data);
+    const emptyRecord = createEmptyRecord(canvasArtifactData);
     setAddingData(emptyRecord);
     setAddDialogOpen(true);
   };
 
-  const handleSave = (updatedFormData: any) => {
-    const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
-    const currentData = currentArtifactData?.data || currentArtifactData;
-
-    if (!Array.isArray(currentData)) {
+  const handleSave = (updatedFormData: Record<string, unknown>) => {
+    if (!Array.isArray(canvasArtifactData)) {
       return;
     }
 
     const updatedData = updateDataArray(
-      currentData,
+      canvasArtifactData,
       selectedItems[0],
       updatedFormData,
       idField
     );
-    setArtifactData("canvasArtifact", { data: updatedData });
+    setCanvasArtifactData(updatedData);
   };
 
-  const handleAddSave = (newFormData: any) => {
-    const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
-    const currentData = currentArtifactData?.data || currentArtifactData;
-
-    if (!Array.isArray(currentData)) {
+  const handleAddSave = (newFormData: Record<string, unknown>) => {
+    if (!Array.isArray(canvasArtifactData)) {
       return;
     }
 
-    const updatedData = addToDataArray(currentData, newFormData);
-    setArtifactData("canvasArtifact", { data: updatedData });
+    const updatedData = addToDataArray(canvasArtifactData, newFormData);
+    setCanvasArtifactData(updatedData);
   };
 
   const deleteSelectedItems = () => {
@@ -343,24 +308,13 @@ export const createStandardHandlers = (params: {
       return;
     }
 
-    const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
-    const currentData = currentArtifactData?.data || currentArtifactData;
-
-    if (!Array.isArray(currentData)) {
+    if (!Array.isArray(canvasArtifactData)) {
       return;
     }
 
-    const updatedData = deleteFromDataArray(
-      currentData,
-      selectedItems,
-      idField
-    );
-    setArtifactData("canvasArtifact", {
-      data: updatedData,
-      ganttSelectedItems: [],
-      dataGridSelectedItems: [],
-      kanbanSelectedItems: [],
-    });
+    const updatedData = deleteFromDataArray(canvasArtifactData, selectedItems, idField);
+    setCanvasArtifactData(updatedData);
+    clearSelections();
   };
 
   return {

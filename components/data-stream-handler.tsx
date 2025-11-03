@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { initialArtifactData, useArtifact } from "@/hooks/use-artifact";
 import { useAIContext } from "@/lib/ai/context/ai-context";
 import { artifactDefinitions } from "./artifact";
@@ -8,7 +8,7 @@ import { useDataStream } from "./data-stream-provider";
 
 export function DataStreamHandler() {
   const { dataStream,setDataStream } = useDataStream();
-  const { setArtifactData } = useAIContext();
+  const { setCanvasArtifactData, setCanvasArtifactConfig } = useAIContext();
 
   const { artifact, setArtifact, setMetadata } = useArtifact();
 
@@ -23,13 +23,19 @@ export function DataStreamHandler() {
     for (const delta of newDeltas) {
       // Handle AI context updates
       if (delta.type === "data-aiContextUpdate") {
-        const { action, artifactType, payload } = delta.data;
+        const { action, payload } = delta.data;
 
         if (action === "setArtifactData") {
-          setArtifactData(artifactType, payload.content);
+          const content = payload?.content;
+          if (content?.data) {
+            setCanvasArtifactData(content.data);
+          }
+          if (content?.config) {
+            setCanvasArtifactConfig(content.config);
+          }
         }
 
-        continue; // Skip to next delta
+        continue;
       }
 
       const artifactDefinition = artifactDefinitions.find(
@@ -90,7 +96,7 @@ export function DataStreamHandler() {
         }
       });
     }
-  }, [dataStream, setArtifact, setMetadata, artifact, setArtifactData]);
+  }, [dataStream, setArtifact, setMetadata, artifact, setCanvasArtifactData, setCanvasArtifactConfig, setDataStream]);
 
   return null;
 }

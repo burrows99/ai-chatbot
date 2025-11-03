@@ -4,7 +4,7 @@
 
 import groupBy from "lodash.groupby";
 import { EyeIcon, LinkIcon, TrashIcon, ZoomInIcon, ZoomOutIcon, MaximizeIcon } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   createStandardButtonGroups,
   createStandardHandlers,
@@ -12,7 +12,6 @@ import {
   extractColumns,
   filterDataBySearch,
   getRandomColor,
-  parseArtifactData,
 } from "@/components/business/base/utils";
 import { CommandBar } from "@/components/business/command-bar/command-bar";
 import { DynamicDialog } from "@/components/business/dialog/dynamic-dialog";
@@ -31,7 +30,6 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import type {
-  // GanttFeature,
   GanttStatus,
 } from "@/components/ui/shadcn-io/gantt";
 import {
@@ -51,8 +49,15 @@ import { useAIContext } from "@/lib/ai/context/ai-context";
 import { cn } from "@/lib/utils";
 
 const DynamicGantt = () => {
-  const { contextData, setArtifactData } = useAIContext();
-  const dataRef = useRef<any[]>([]);
+  const {
+    canvasArtifactData,
+    setCanvasArtifactData,
+    ganttSelectedItems,
+    setKanbanSelections,
+    setGanttSelections,
+    setDataGridSelections,
+  } = useAIContext();
+
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -60,26 +65,7 @@ const DynamicGantt = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [zoomLevel, setZoomLevel] = useState(100);
 
-  const parseResult = useMemo(() => {
-    const result = parseArtifactData(contextData);
-
-    // Only update ref if data actually changed
-    if (JSON.stringify(result.data) !== JSON.stringify(dataRef.current)) {
-      dataRef.current = result.data;
-    }
-
-    return {
-      ...result,
-      data: dataRef.current,
-    };
-  }, [contextData]);
-
-  const { data, error } = parseResult;
-  const firstRecord = data[0] ?? {};
-
-  const ganttSelectedItems = useMemo(() => {
-    return contextData?.artifact?.canvasArtifact?.ganttSelectedItems || [];
-  }, [contextData?.artifact?.canvasArtifact?.ganttSelectedItems]);
+  const firstRecord = canvasArtifactData[0] ?? {};
 
   const extractColumnsCallback = useCallback(
     (dataArray: any[]): GanttStatus[] => {
@@ -106,18 +92,21 @@ const DynamicGantt = () => {
     descriptionField,
   } = fieldMappings;
   const newColumns = useMemo(
-    () => extractColumnsCallback(data),
-    [data, extractColumnsCallback]
+    () => extractColumnsCallback(canvasArtifactData),
+    [canvasArtifactData, extractColumnsCallback]
   );
 
   const features = useMemo(() => {
-    if (!data || data.length === 0) {
+    if (!canvasArtifactData || canvasArtifactData.length === 0) {
       return [];
     }
 
     try {
-      // Apply search filter first
-      const filteredData = filterDataBySearch(data, searchQuery, fieldMappings);
+      const filteredData = filterDataBySearch(
+        canvasArtifactData,
+        searchQuery,
+        fieldMappings
+      );
 
       return filteredData.map((item: any, index: number) => {
         const idValue = item[idField]?.value || `item-${index}`;
@@ -158,7 +147,7 @@ const DynamicGantt = () => {
       return [];
     }
   }, [
-    data,
+    canvasArtifactData,
     idField,
     startDateField,
     endDateField,
@@ -176,7 +165,6 @@ const DynamicGantt = () => {
     )
   );
 
-  // Handle feature selection
   const handleFeatureClick = useCallback(
     (featureId: string, event: React.MouseEvent | React.KeyboardEvent) => {
       const isCtrlOrCmd = event.ctrlKey || event.metaKey;
@@ -190,25 +178,36 @@ const DynamicGantt = () => {
       } else {
         newSelection = [featureId];
       }
-      setArtifactData("canvasArtifact", { ganttSelectedItems: newSelection });
+      setGanttSelections(newSelection);
     },
-    [ganttSelectedItems, setArtifactData]
+    [ganttSelectedItems, setGanttSelections]
   );
 
-  // Create standard handlers using shared utility
   const standardHandlers = useMemo(() => {
     return createStandardHandlers({
-      contextData,
-      setArtifactData,
+      setCanvasArtifactData,
+      clearSelections: () => {
+        setGanttSelections([]);
+        setDataGridSelections([]);
+        setKanbanSelections([]);
+      },
       selectedItems: ganttSelectedItems,
       idField,
       setEditingData,
       setEditDialogOpen,
       setAddingData,
       setAddDialogOpen,
-      data,
+      canvasArtifactData,
     });
-  }, [contextData, setArtifactData, ganttSelectedItems, idField, data]);
+  }, [
+    setCanvasArtifactData,
+    setGanttSelections,
+    setDataGridSelections,
+    setKanbanSelections,
+    ganttSelectedItems,
+    idField,
+    canvasArtifactData,
+  ]);
 
   const {
     handleEdit,
@@ -218,27 +217,24 @@ const DynamicGantt = () => {
     deleteSelectedItems,
   } = standardHandlers;
 
-  // Zoom control functions
   const handleZoomIn = useCallback(() => {
-    setZoomLevel(prev => Math.min(prev + 25, 500)); // Increase by 25%, max 500%
+    setZoomLevel(prev => Math.min(prev + 25, 500));
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    setZoomLevel(prev => Math.max(prev - 25, 25)); // Decrease by 25%, min 25%
+    setZoomLevel(prev => Math.max(prev - 25, 25));
   }, []);
 
   const handleZoomToFit = useCallback(() => {
-    setZoomLevel(100); // Reset to 100%
+    setZoomLevel(100);
   }, []);
 
-  // Create standard button groups using shared utility
   const buttonGroups = useMemo(() => {
     const standardGroups = createStandardButtonGroups(
       { handleAdd, handleEdit, deleteSelectedItems },
       ganttSelectedItems
     );
 
-    // Add zoom controls button group
     const zoomGroup = [
       {
         label: "",
@@ -269,29 +265,19 @@ const DynamicGantt = () => {
   const handleCopyLink = (id: string) => console.log(`Copy link: ${id}`);
 
   const handleRemoveFeature = (id: string) => {
-    const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
-    const currentData = currentArtifactData?.data || currentArtifactData;
+    const currentData = canvasArtifactData;
 
     if (!Array.isArray(currentData)) {
       return;
     }
 
-    // Filter out the specific item
     const updatedData = currentData.filter((item: any, index: number) => {
       const itemId = String(item[idField]?.value || `item-${index}`);
       return itemId !== id;
     });
-
-    setArtifactData("canvasArtifact", {
-      data: updatedData,
-      ganttSelectedItems: ganttSelectedItems.filter(
-        (selectedId: string) => selectedId !== id
-      ),
-    });
+    setCanvasArtifactData(updatedData);
+    setGanttSelections(ganttSelectedItems.filter((selectedId: string) => selectedId !== id));
   };
-
-  const _handleRemoveMarker = (id: string) =>
-    console.log(`Remove marker: ${id}`);
 
   const handleCreateMarker = (date: Date) =>
     console.log(`Create marker: ${date.toISOString()}`);
@@ -310,20 +296,9 @@ const DynamicGantt = () => {
       `Add feature: ${date.toISOString()} (Gantt is read-only, use Kanban to modify)`
     );
 
-  if (error) {
+  if (!canvasArtifactData || canvasArtifactData.length === 0) {
     return (
-      <div className="flex h-full w-full items-center justify-center p-8">
-        <Alert className="max-w-md" variant="destructive">
-          <AlertTitle>Invalid JSON for Gantt</AlertTitle>
-          <AlertDescription>Error parsing JSON data: {error}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex h-full w-full items-center justify-center p-8">
+      <div className="flex w-full items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>No Data Available</CardTitle>

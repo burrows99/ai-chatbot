@@ -9,11 +9,9 @@ import {
   dateFormatter,
   detectFieldMappings,
   filterDataBySearch,
-  parseArtifactData,
 } from "@/components/business/base/utils";
 import { CommandBar } from "@/components/business/command-bar/command-bar";
 import { DynamicDialog } from "@/components/business/dialog/dynamic-dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Card,
   CardDescription,
@@ -31,6 +29,7 @@ import {
 } from "@/components/ui/table";
 import { useAIContext } from "@/lib/ai/context/ai-context";
 import { cn } from "@/lib/utils";
+import type { FieldConfig } from "@/artifacts/canvas/blueprint";
 
 type DataGridItem = {
   id: string;
@@ -38,24 +37,21 @@ type DataGridItem = {
 };
 
 const DynamicDataGrid = () => {
-  const { contextData, setArtifactData } = useAIContext();
+  const {
+    canvasArtifactData,
+    setCanvasArtifactData,
+    dataGridSelectedItems,
+    setKanbanSelections,
+    setGanttSelections,
+    setDataGridSelections,
+  } = useAIContext();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addingData, setAddingData] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const parseResult = useMemo(() => {
-    return parseArtifactData(contextData);
-  }, [contextData]);
-
-  const { data, error } = parseResult;
-  const firstRecord = data[0] ?? {};
-
-  // Get selected items from context
-  const dataGridSelectedItems = useMemo(() => {
-    return contextData?.artifact?.canvasArtifact?.dataGridSelectedItems || [];
-  }, [contextData?.artifact?.canvasArtifact?.dataGridSelectedItems]);
+  const firstRecord = canvasArtifactData[0] ?? {};
 
   const fieldMappings = useMemo(
     () => detectFieldMappings(firstRecord),
@@ -64,13 +60,12 @@ const DynamicDataGrid = () => {
   const { idField } = fieldMappings;
 
   const gridItems = useMemo(() => {
-    if (!data || data.length === 0) {
+    if (!canvasArtifactData || canvasArtifactData.length === 0) {
       return [];
     }
 
     try {
-      // Apply search filter first
-      const filteredData = filterDataBySearch(data, searchQuery, fieldMappings);
+      const filteredData = filterDataBySearch(canvasArtifactData, searchQuery, fieldMappings);
 
       return filteredData.map((item: any, index: number) => {
         const idValue = item[idField]?.value || `item-${index}`;
@@ -92,20 +87,20 @@ const DynamicDataGrid = () => {
       console.error("Error processing grid items:", err);
       return [];
     }
-  }, [data, idField, searchQuery, fieldMappings]);
+  }, [canvasArtifactData, idField, searchQuery, fieldMappings]);
 
-  // Get all field keys for table headers (excluding id)
   const tableHeaders = useMemo(() => {
-    if (!firstRecord || Object.keys(firstRecord).length === 0) {
+    const record = firstRecord as Record<string, Partial<FieldConfig>>;
+    if (!record || Object.keys(record).length === 0) {
       return [];
     }
 
-    return Object.keys(firstRecord).map((fieldKey) => {
-      const field = firstRecord[fieldKey];
+    return Object.keys(record).map((fieldKey) => {
+      const field = record[fieldKey];
       return {
         key: fieldKey,
-        label: field?.label || fieldKey,
-        type: field?.type?.name || "text",
+        label: field?.label ?? fieldKey,
+        type: field?.type?.name ?? "text",
       };
     });
   }, [firstRecord]);
@@ -122,31 +117,33 @@ const DynamicDataGrid = () => {
         newSelected = currentSelected.filter((id: string) => id !== itemId);
       }
 
-      setArtifactData("canvasArtifact", { dataGridSelectedItems: newSelected });
+      setDataGridSelections(newSelected);
     },
-    [dataGridSelectedItems, setArtifactData]
+    [dataGridSelectedItems, setDataGridSelections]
   );
 
-  // Handle select all
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       const newSelected = checked ? gridItems.map((item) => item.id) : [];
-      setArtifactData("canvasArtifact", { dataGridSelectedItems: newSelected });
+      setDataGridSelections(newSelected);
     },
-    [gridItems, setArtifactData]
+    [gridItems, setDataGridSelections]
   );
 
-  // Create standard handlers using the shared utility
   const handlers = createStandardHandlers({
-    contextData,
-    setArtifactData,
+    setCanvasArtifactData,
+    clearSelections: () => {
+      setGanttSelections([]);
+      setDataGridSelections([]);
+      setKanbanSelections([]);
+    },
     selectedItems: dataGridSelectedItems,
     idField,
     setEditingData,
     setEditDialogOpen,
     setAddingData,
     setAddDialogOpen,
-    data,
+    canvasArtifactData,
   });
 
   const {
@@ -157,7 +154,6 @@ const DynamicDataGrid = () => {
     deleteSelectedItems,
   } = handlers;
 
-  // Create button groups using the shared utility
   const buttonGroups = createStandardButtonGroups(
     {
       handleAdd,
@@ -167,7 +163,6 @@ const DynamicDataGrid = () => {
     dataGridSelectedItems
   );
 
-  // Format cell value based on field type
   const formatCellValue = useCallback((value: any, type: string) => {
     if (value === null || value === undefined || value === "") {
       return "-";
@@ -190,26 +185,16 @@ const DynamicDataGrid = () => {
         return value;
     }
   }, []);
-
-  // Check if all items are selected
+  
   const isAllSelected =
     gridItems.length > 0 && dataGridSelectedItems.length === gridItems.length;
   const isIndeterminate =
     dataGridSelectedItems.length > 0 &&
     dataGridSelectedItems.length < gridItems.length;
 
-  if (error) {
+  if (!canvasArtifactData || canvasArtifactData.length === 0) {
     return (
-      <Alert variant="destructive">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex h-full w-full items-center justify-center p-8">
+      <div className="flex w-full items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>No Data Available</CardTitle>
@@ -281,8 +266,7 @@ const DynamicDataGrid = () => {
           </TableBody>
         </Table>
       </div>
-
-      {/* Edit Dialog */}
+      
       {editingData && (
         <DynamicDialog
           data={editingData}

@@ -10,7 +10,6 @@ import {
   detectFieldMappings,
   extractColumns,
   filterDataBySearch,
-  parseArtifactData,
   shortDateFormatter,
 } from "@/components/business/base/utils";
 import { CommandBar } from "@/components/business/command-bar/command-bar";
@@ -47,33 +46,48 @@ type KanbanFeature = {
 };
 
 const DynamicKanban = () => {
-  const { contextData, setArtifactData } = useAIContext();
+  const {
+    canvasArtifactData,
+    setCanvasArtifactData,
+    kanbanSelectedItems,
+    setKanbanSelections,
+    setGanttSelections,
+    setDataGridSelections,
+  } = useAIContext();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addingData, setAddingData] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const parseResult = useMemo(() => {
-    return parseArtifactData(contextData);
-  }, [contextData]);
-
-  const { data, error } = parseResult;
-  const firstRecord = data[0] ?? {};
+  const firstRecord = canvasArtifactData?.[0] ?? {};
 
   // Get selected items from context
-  const kanbanSelectedItems = useMemo(() => {
-    return contextData?.artifact?.canvasArtifact?.kanbanSelectedItems || [];
-  }, [contextData?.artifact?.canvasArtifact?.kanbanSelectedItems]);
+  const handleCardClick = useCallback((featureId: string, event: React.PointerEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        // Multi-select
+        setKanbanSelections((prev) =>
+          prev.includes(featureId)
+            ? prev.filter((id) => id !== featureId)
+            : [...prev, featureId]
+        );
+      } else {
+        // Single selection
+        setKanbanSelections([featureId]);
+      }
+    },
+    [setKanbanSelections]
+  );
 
   const columns = useMemo(() => {
-    return extractColumns(data, firstRecord);
-  }, [data, firstRecord]);
+    return extractColumns(canvasArtifactData, firstRecord);
+  }, [canvasArtifactData, firstRecord]);
 
   const fieldMappings = useMemo(
     () => detectFieldMappings(firstRecord),
     [firstRecord]
   );
+
   const {
     idField,
     startDateField,
@@ -81,16 +95,18 @@ const DynamicKanban = () => {
     columnField,
     descriptionField,
   } = fieldMappings;
-  const newColumns = useMemo(() => columns, [columns]);
 
   const features = useMemo(() => {
-    if (!data || data.length === 0) {
+    if (!canvasArtifactData || canvasArtifactData.length === 0) {
       return [];
     }
 
     try {
-      // Apply search filter first
-      const filteredData = filterDataBySearch(data, searchQuery, fieldMappings);
+      const filteredData = filterDataBySearch(
+        canvasArtifactData,
+        searchQuery,
+        fieldMappings
+      );
 
       return filteredData.map((item: any, index: number) => {
         const idValue = item[idField]?.value || `item-${index}`;
@@ -99,8 +115,7 @@ const DynamicKanban = () => {
           item[startDateField]?.value || new Date().toISOString().split("T")[0];
         const endDateValue =
           item[endDateField]?.value || new Date().toISOString().split("T")[0];
-        const columnValue =
-          item[columnField]?.value || newColumns[0]?.id || "Default";
+        const columnValue = item[columnField]?.value || columns[0]?.id || "Default";
         const descriptionValue = item[descriptionField]?.value || "";
         return {
           id: String(idValue),
@@ -120,138 +135,98 @@ const DynamicKanban = () => {
       return [];
     }
   }, [
-    data,
+    canvasArtifactData,
     idField,
     startDateField,
     endDateField,
     columnField,
     descriptionField,
-    newColumns,
+    columns,
     searchQuery,
     fieldMappings,
   ]);
 
-  const getUpdatedContentData = useCallback(
-    (
-      originalContent: any,
+  const getUpdatedContentData = useCallback((
+      canvasArtifactData: Record<string, any>[],
       updatedFeatures: KanbanFeature[],
       fieldMappings: {
         idField: string;
         startDateField: string;
+        endDateField: string;
         columnField: string;
       }
-    ): any => {
-      const { columnField } = fieldMappings;
+    ): Record<string, any>[] => {
+      const { idField, columnField } = fieldMappings;
 
-      // Work with the original data structure
-      const updatedData = JSON.parse(JSON.stringify(originalContent));
+      if (
+        !Array.isArray(canvasArtifactData) ||
+        canvasArtifactData.length === 0
+      ) {
+        return [];
+      }
 
+      // Build feature map by the SAME key you'll use below
       const featureMap = new Map<string, KanbanFeature>();
       updatedFeatures.map((feature) => {
         featureMap.set(feature.id, feature);
         return null;
       });
 
-      // Update the data array if it exists
-      if (Array.isArray(updatedData)) {
-        return updatedData.map((record, index) => {
-          const recordId = String(record[idField]?.value || `item-${index}`);
-          const feature = featureMap.get(recordId);
-          if (!feature) {
-            return record;
-          }
-          const updatedRecord = { ...record };
-          if (updatedRecord[columnField]) {
-            updatedRecord[columnField] = {
-              ...updatedRecord[columnField],
-              value: feature.column,
-            };
-          }
+      return canvasArtifactData.map((record, index) => {
+        // Choose ONE canonical id format and stick to it.
+        // If your features are keyed by the raw id field, use this:
+        const recordKey = String(record?.[idField]?.value ?? `item-${index}`);
+        const feature = featureMap.get(recordKey);
+        if (!feature) { 
+          return record; 
+        }
 
-          return updatedRecord;
-        });
-      }
+        // Update column field immutably
+        return {
+          ...record,
+          [columnField]: record?.[columnField]
+            ? { ...record[columnField], value: feature.column }
+            : { value: feature.column },
+        };
+      });
+    }, []);
 
-      return updatedData;
-    },
-    [idField]
-  );
-
-  const onDataChange = useCallback(
-    (updatedFeatures: KanbanFeature[]) => {
-      const currentArtifactData = contextData?.artifact?.canvasArtifact?.data;
-      const updatedData = getUpdatedContentData(
-        currentArtifactData?.data || currentArtifactData,
+  const onDataChange = useCallback((updatedFeatures: KanbanFeature[]) => {
+      const updatedCanvasArtifactData = getUpdatedContentData(
+        canvasArtifactData,
         updatedFeatures,
         fieldMappings
       );
-      setArtifactData("canvasArtifact", { data: updatedData });
+      setCanvasArtifactData(updatedCanvasArtifactData);
     },
-    [
-      fieldMappings,
-      getUpdatedContentData,
-      contextData?.artifact?.canvasArtifact?.data,
-      setArtifactData,
-    ]
+    [ fieldMappings, getUpdatedContentData, canvasArtifactData, setCanvasArtifactData ]
   );
 
-  // Handle card selection
-  const handleCardClick = useCallback(
-    (featureId: string, event: React.PointerEvent) => {
-      const isCtrlOrCmd = event.ctrlKey || event.metaKey;
-      const isShift = event.shiftKey;
-
-      let newSelection: string[];
-
-      if (isCtrlOrCmd) {
-        // Toggle selection
-        if (kanbanSelectedItems.includes(featureId)) {
-          newSelection = kanbanSelectedItems.filter((id: string) => id !== featureId);
-        } else {
-          newSelection = [...kanbanSelectedItems, featureId];
-        }
-      } else if (isShift && kanbanSelectedItems.length > 0) {
-        // Range selection
-        const lastSelected = kanbanSelectedItems.at(-1);
-        const lastIndex = features.findIndex((f) => f.id === lastSelected);
-        const currentIndex = features.findIndex((f) => f.id === featureId);
-
-        if (lastIndex !== -1 && currentIndex !== -1) {
-          const start = Math.min(lastIndex, currentIndex);
-          const end = Math.max(lastIndex, currentIndex);
-          const rangeIds = features.slice(start, end + 1).map((f) => f.id);
-
-          // Combine with existing selection
-          newSelection = Array.from(
-            new Set([...kanbanSelectedItems, ...rangeIds])
-          );
-        } else {
-          newSelection = [featureId];
-        }
-      } else {
-        // Single selection
-        newSelection = [featureId];
-      }
-
-      setArtifactData("canvasArtifact", { kanbanSelectedItems: newSelection });
-    },
-    [kanbanSelectedItems, features, setArtifactData]
-  );
-
-  // Create standard handlers using shared utility
   const standardHandlers = useMemo(() => {
     return createStandardHandlers({
-      contextData,
-      setArtifactData,
+      setCanvasArtifactData,
+      clearSelections: () => {
+        setGanttSelections([]);
+        setDataGridSelections([]);
+        setKanbanSelections([]);
+      },
       selectedItems: kanbanSelectedItems,
       idField,
       setEditingData,
       setEditDialogOpen,
       setAddingData,
       setAddDialogOpen,
-      data,
+      canvasArtifactData,
     });
-  }, [contextData, setArtifactData, kanbanSelectedItems, idField, data]);
+  }, [
+    setCanvasArtifactData,
+    setGanttSelections,
+    setDataGridSelections,
+    setKanbanSelections,
+    kanbanSelectedItems,
+    idField,
+    canvasArtifactData,
+  ]);
 
   const {
     handleEdit,
@@ -261,7 +236,6 @@ const DynamicKanban = () => {
     deleteSelectedItems,
   } = standardHandlers;
 
-  // Create standard button groups using shared utility
   const buttonGroups = useMemo(() => {
     return createStandardButtonGroups(
       { handleAdd, handleEdit, deleteSelectedItems },
@@ -269,20 +243,9 @@ const DynamicKanban = () => {
     );
   }, [handleAdd, handleEdit, deleteSelectedItems, kanbanSelectedItems]);
 
-  if (error) {
+  if (!canvasArtifactData || canvasArtifactData.length === 0) {
     return (
-      <div className="flex h-full w-full items-center justify-center p-8">
-        <Alert className="max-w-md" variant="destructive">
-          <AlertTitle>Invalid JSON for Kanban</AlertTitle>
-          <AlertDescription>Error parsing JSON data: {error}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex h-full w-full items-center justify-center p-8">
+      <div className="flex w-full items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>No Data Available</CardTitle>
@@ -329,7 +292,7 @@ const DynamicKanban = () => {
         )}
 
         <KanbanProvider
-          columns={newColumns}
+          columns={columns}
           data={features}
           onDataChange={onDataChange}
         >
@@ -391,7 +354,7 @@ const DynamicKanban = () => {
                               !Number.isNaN(feature.endAt.getTime())
                                 ? dateFormatter.format(feature.endAt)
                                 : "N/A";
-                            return `${startDate} - ${endDate}`;
+                            return `;${startDate} - ${endDate}`;
                           } catch (_error) {
                             return "Invalid date";
                           }
