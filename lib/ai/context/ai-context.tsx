@@ -10,7 +10,6 @@ type AIContextData = {
         documentId?: string;
         [dataKey: string]: any;
       };
-      selectedItems?: string[]; // Added for selection tracking
       ganttSelectedItems?: string[];
       dataGridSelectedItems?: string[];
       kanbanSelectedItems?: string[];
@@ -27,7 +26,6 @@ type AIContextMethods = {
   getContextAsJson: () => string;
   contextData: AIContextData;
   // Selection-specific methods
-  setSelectedItems: (artifactType: string, selectedIds: string[]) => void;
   getSelectedItems: (artifactType: string) => string[];
   clearSelectedItems: (artifactType: string) => void;
   toggleItemSelection: (artifactType: string, itemId: string) => void;
@@ -45,7 +43,6 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     artifact: {
       canvasArtifact: {
         data: {},
-        selectedItems: [],
         ganttSelectedItems: [],
         dataGridSelectedItems: [],
         kanbanSelectedItems: [],   
@@ -65,10 +62,6 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
             ...value,
           },
           // Preserve selectedItems if not explicitly updated
-          selectedItems:
-            value.selectedItems !== undefined
-              ? value.selectedItems
-              : prev.artifact[artifactType]?.selectedItems || [],
           ganttSelectedItems:
             value.ganttSelectedItems !== undefined
               ? value.ganttSelectedItems
@@ -90,113 +83,11 @@ export function AIContextProvider({ children }: { children: ReactNode }) {
     return contextData.artifact[artifactType]?.data;
   };
 
-  const setSelectedItems = (artifactType: string, selectedIds: string[]) => {
-    setContextData((prev) => ({
-      ...prev,
-      artifact: {
-        ...prev.artifact,
-        [artifactType]: {
-          ...prev.artifact[artifactType],
-          selectedItems: selectedIds,
-        },
-      },
-    }));
-  };
-
-  const setGanttSelectedItems = (artifactType: string, ganttSelectedIds: string[]) => {
-    setContextData((prev) => ({
-      ...prev,
-      artifact: {
-        ...prev.artifact,
-        [artifactType]: {
-          ...prev.artifact[artifactType],
-          ganttSelectedItems: ganttSelectedIds,
-        },
-      },
-    }));
-  };
-
-  const setDataGridSelectedItems = (artifactType: string, dataGridSelectedIds: string[]) => {
-    setContextData((prev) => ({
-      ...prev,
-      artifact: {
-        ...prev.artifact,
-        [artifactType]: {
-          ...prev.artifact[artifactType],
-          dataGridSelectedItems: dataGridSelectedIds,
-        },
-      },
-    }));
-  };
-
-  const setKanbanSelectedItems = (artifactType: string, kanbanSelectedIds: string[]) => {
-    setContextData((prev) => ({
-      ...prev,
-      artifact: {
-        ...prev.artifact,
-        [artifactType]: {
-          ...prev.artifact[artifactType],
-          kanbanSelectedItems: kanbanSelectedIds,
-        },
-      },
-    }));
-  };
-
-  const getSelectedItems = (artifactType: string): string[] => {
-    return contextData.artifact[artifactType]?.selectedItems || [];
-  };
-
-  const getGanttSelectedItems = (artifactType: string): string[] => {
-    return contextData.artifact[artifactType]?.ganttSelectedItems || [];
-  };
-
-  const getDataGridSelectedItems = (artifactType: string): string[] => {
-    return contextData.artifact[artifactType]?.dataGridSelectedItems || [];
-  };
-
-  const getKanbanSelectedItems = (artifactType: string): string[] => {
-    return contextData.artifact[artifactType]?.kanbanSelectedItems || [];
-  };
-
-  const clearSelectedItems = (artifactType: string) => {
-    setSelectedItems(artifactType, []);
-    setGanttSelectedItems(artifactType, []);
-    setDataGridSelectedItems(artifactType, []);
-    setKanbanSelectedItems(artifactType, []);
-  };
-
-  const toggleItemSelection = (artifactType: string, itemId: string) => {
-    const currentSelection = getSelectedItems(artifactType);
-    if (currentSelection.includes(itemId)) {
-      setSelectedItems(
-        artifactType,
-        currentSelection.filter((id) => id !== itemId)
-      );
-    } else {
-      setSelectedItems(artifactType, [...currentSelection, itemId]);
-    }
-  };
-
-  const getContextAsJson = () => {
-    return JSON.stringify(contextData, null, 2);
-  };
-
   const contextValue: AIContextValue = {
     ...contextData,
     setArtifactData,
     getArtifactData,
-    getContextAsJson,
     contextData,
-    setSelectedItems,
-    getSelectedItems,
-    setGanttSelectedItems,
-    getGanttSelectedItems,
-    setDataGridSelectedItems,
-    getDataGridSelectedItems,
-    setKanbanSelectedItems,
-    getKanbanSelectedItems,
-    clearSelectedItems,
-    toggleItemSelection,
   };
 
   return (
