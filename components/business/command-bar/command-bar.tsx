@@ -75,37 +75,10 @@ export function CommandBar({
         )}
         {...props}
       >
-        {/* Search Box */}
-        {showSearch && onSearchChange && (
-          <>
-            <div className="min-w-0 flex-1">
-              <InputGroup>
-                <InputGroupInput
-                  placeholder={searchPlaceholder}
-                  value={searchValue}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-                <InputGroupAddon>
-                  <SearchIcon className="h-4 w-4" />
-                </InputGroupAddon>
-              </InputGroup>
-            </div>
-            {buttonGroups.length > 0 && (
-              <Separator
-                orientation={isHorizontal ? "vertical" : "horizontal"}
-                className={cn(
-                  "bg-border",
-                  isHorizontal ? "h-6 w-[1px]" : "h-[1px] w-6"
-                )}
-              />
-            )}
-          </>
-        )}
-
+        {/* Button Groups - Left Side */}
         {buttonGroups.map((group, groupIndex) => (
           <React.Fragment key={groupIndex}>
-            {/* Render separator before each group (except the first one, or if search is shown) */}
+            {/* Render separator before each group (except the first one) */}
             {groupIndex > 0 && (
               <Separator
                 orientation={isHorizontal ? "vertical" : "horizontal"}
@@ -152,6 +125,42 @@ export function CommandBar({
             </div>
           </React.Fragment>
         ))}
+
+        {/* Spacer to push search to the right */}
+        {showSearch && onSearchChange && buttonGroups.length > 0 && (
+          <div className="flex-1" />
+        )}
+
+        {/* Search Box - Right Side */}
+        {showSearch && onSearchChange && (
+          <>
+            {buttonGroups.length > 0 && (
+              <Separator
+                orientation={isHorizontal ? "vertical" : "horizontal"}
+                className={cn(
+                  "bg-border",
+                  isHorizontal ? "h-6 w-[1px]" : "h-[1px] w-6"
+                )}
+              />
+            )}
+            <div className={cn(
+              "min-w-0",
+              buttonGroups.length > 0 ? "w-64" : "flex-1"
+            )}>
+              <InputGroup>
+                <InputGroupInput
+                  placeholder={searchPlaceholder}
+                  value={searchValue}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+                <InputGroupAddon>
+                  <SearchIcon className="h-4 w-4" />
+                </InputGroupAddon>
+              </InputGroup>
+            </div>
+          </>
+        )}
       </div>
     </TooltipProvider>
   );

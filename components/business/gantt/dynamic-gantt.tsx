@@ -3,7 +3,7 @@
 "use client";
 
 import groupBy from "lodash.groupby";
-import { EyeIcon, LinkIcon, TrashIcon } from "lucide-react";
+import { EyeIcon, LinkIcon, TrashIcon, ZoomInIcon, ZoomOutIcon, MaximizeIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   createStandardButtonGroups,
@@ -58,6 +58,7 @@ const DynamicGantt = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addingData, setAddingData] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [zoomLevel, setZoomLevel] = useState(100);
 
   const parseResult = useMemo(() => {
     const result = parseArtifactData(contextData);
@@ -217,13 +218,50 @@ const DynamicGantt = () => {
     deleteSelectedItems,
   } = standardHandlers;
 
+  // Zoom control functions
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(prev + 25, 500)); // Increase by 25%, max 500%
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(prev - 25, 25)); // Decrease by 25%, min 25%
+  }, []);
+
+  const handleZoomToFit = useCallback(() => {
+    setZoomLevel(100); // Reset to 100%
+  }, []);
+
   // Create standard button groups using shared utility
   const buttonGroups = useMemo(() => {
-    return createStandardButtonGroups(
+    const standardGroups = createStandardButtonGroups(
       { handleAdd, handleEdit, deleteSelectedItems },
       ganttSelectedItems
     );
-  }, [handleAdd, handleEdit, deleteSelectedItems, ganttSelectedItems]);
+
+    // Add zoom controls button group
+    const zoomGroup = [
+      {
+        label: "",
+        tooltip: "Zoom In",
+        callback: handleZoomIn,
+        icon: <ZoomInIcon className="h-4 w-4" />,
+      },
+      {
+        label: "",
+        tooltip: "Zoom Out", 
+        callback: handleZoomOut,
+        icon: <ZoomOutIcon className="h-4 w-4" />,
+      },
+      {
+        label: "",
+        tooltip: "Zoom to Fit",
+        callback: handleZoomToFit,
+        icon: <MaximizeIcon className="h-4 w-4" />,
+      },
+    ];
+
+    return [...standardGroups, zoomGroup];
+  }, [handleAdd, handleEdit, deleteSelectedItems, ganttSelectedItems, handleZoomIn, handleZoomOut, handleZoomToFit]);
 
   const handleViewFeature = (id: string) =>
     console.log(`Feature selected: ${id}`);
@@ -335,13 +373,13 @@ const DynamicGantt = () => {
           className="border"
           onAddItem={handleAddFeature}
           range="monthly"
-          zoom={100}
+          zoom={zoomLevel}
         >
           <GanttSidebar>
             {Object.entries(sortedGroupedFeatures).map(
               ([groupKey, groupFeatures]) => (
                 <GanttSidebarGroup key={groupKey} name={groupKey}>
-                  {groupFeatures.map((feature) => {
+                  {groupFeatures.map((feature: { id: any; name?: string; startAt?: Date; endAt?: Date; status?: GanttStatus; lane?: string | undefined; }) => {
                     const isSelected = ganttSelectedItems.includes(feature.id);
                     return (
                       <GanttSidebarItem
