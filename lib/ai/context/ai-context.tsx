@@ -4,6 +4,7 @@ import {
   createContext,
   type ReactNode,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -30,16 +31,67 @@ export type AIContextValue = {
 
 const AIContext = createContext<AIContextValue | undefined>(undefined);
 
-export function AIContextProvider({ children }: { children: ReactNode }) {
-  const [canvasArtifactData, setCanvasArtifactData] =
-    useState<CanvasArtifactData>([]);
-  const [canvasArtifactConfig, setCanvasArtifactConfig] =
-    useState<CanvasArtifactConfig>({});
-  const [ganttSelectedItems, setGanttSelections] = useState<string[]>([]);
-  const [dataGridSelectedItems, setDataGridSelections] = useState<string[]>([]);
-  const [kanbanSelectedItems, setKanbanSelections] = useState<string[]>([]);
+const LS_KEY = "ai:context:v1";
 
-  // Memo to keep value stable across renders unless deps change
+function loadInitial() {
+  try {
+    const raw =
+      typeof window !== "undefined" ? localStorage.getItem(LS_KEY) : null;
+    if (!raw) {
+      return null;
+    }
+    return JSON.parse(raw) as {
+      canvasArtifactData: CanvasArtifactData;
+      canvasArtifactConfig: CanvasArtifactConfig;
+      ganttSelectedItems: string[];
+      dataGridSelectedItems: string[];
+      kanbanSelectedItems: string[];
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function AIContextProvider({ children }: { children: ReactNode }) {
+  const initial = loadInitial();
+
+  const [canvasArtifactData, setCanvasArtifactData] =
+    useState<CanvasArtifactData>(initial?.canvasArtifactData ?? []);
+  const [canvasArtifactConfig, setCanvasArtifactConfig] =
+    useState<CanvasArtifactConfig>(initial?.canvasArtifactConfig ?? {});
+  const [ganttSelectedItems, setGanttSelections] = useState<string[]>(
+    initial?.ganttSelectedItems ?? []
+  );
+  const [dataGridSelectedItems, setDataGridSelections] = useState<string[]>(
+    initial?.dataGridSelectedItems ?? []
+  );
+  const [kanbanSelectedItems, setKanbanSelections] = useState<string[]>(
+    initial?.kanbanSelectedItems ?? []
+  );
+  
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        LS_KEY,
+        JSON.stringify({
+          canvasArtifactData,
+          canvasArtifactConfig,
+          ganttSelectedItems,
+          dataGridSelectedItems,
+          kanbanSelectedItems,
+        })
+      );
+    } catch (err) {
+      console.warn("[AIContext] persist failed:", err);
+    }
+  }, [
+    canvasArtifactData,
+    canvasArtifactConfig,
+    ganttSelectedItems,
+    dataGridSelectedItems,
+    kanbanSelectedItems,
+  ]);
+
   const value = useMemo<AIContextValue>(
     () => ({
       canvasArtifactData,
