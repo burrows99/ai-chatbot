@@ -30,13 +30,13 @@ const ollama = createOllama({
 
 const ollamaProvider = customProvider({
   languageModels: {
-    "chat-model": ollama("gpt-oss:120b-cloud"),
+    "chat-model": ollama(String(process.env.OLLAMA_MODEL)),
     "chat-model-reasoning": wrapLanguageModel({
-      model: ollama("gpt-oss:120b-cloud"),
+      model: ollama(String(process.env.OLLAMA_MODEL)),
       middleware: extractReasoningMiddleware({ tagName: "reasoning" }),
     }),
-    "title-model": ollama("gpt-oss:120b-cloud"),
-    "artifact-model": ollama("gpt-oss:120b-cloud"),
+    "title-model": ollama(String(process.env.OLLAMA_MODEL)),
+    "artifact-model": ollama(String(process.env.OLLAMA_MODEL)),
   },
   imageModels: {
     // 'small-model': openai.image('gpt-image-1'),

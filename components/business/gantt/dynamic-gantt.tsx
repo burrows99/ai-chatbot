@@ -379,7 +379,7 @@ const DynamicGantt = () => {
             {Object.entries(sortedGroupedFeatures).map(
               ([groupKey, groupFeatures]) => (
                 <GanttSidebarGroup key={groupKey} name={groupKey}>
-                  {groupFeatures.map((feature: { id: any; name?: string; startAt?: Date; endAt?: Date; status?: GanttStatus; lane?: string | undefined; }) => {
+                  {groupFeatures.map((feature) => {
                     const isSelected = ganttSelectedItems.includes(feature.id);
                     return (
                       <GanttSidebarItem

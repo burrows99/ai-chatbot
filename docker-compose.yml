@@ -57,27 +57,27 @@ services:
     networks:
       - ai-chatbot-network
 
-  app:
-    image: node:20
-    working_dir: /app
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env.docker
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.pnpm-store
-    command: sh -c "corepack enable pnpm && pnpm install && pnpm run db:migrate && pnpm dev"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    networks:
-      - ai-chatbot-network
+  # app:
+  #   image: node:20
+  #   working_dir: /app
+  #   ports:
+  #     - "3000:3000"
+  #   env_file:
+  #     - .env.docker
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+  #     - /app/.pnpm-store
+  #   command: sh -c "corepack enable pnpm && pnpm install && pnpm run db:migrate && pnpm dev"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     minio:
+  #       condition: service_healthy
+  #   networks:
+  #     - ai-chatbot-network
 
 volumes:
   db_data:
