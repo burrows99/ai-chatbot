@@ -244,7 +244,6 @@ const DynamicKanban = () => {
       contextData,
       setArtifactData,
       selectedItems: kanbanSelectedItems,
-      type: "kanban",
       idField,
       setEditingData,
       setEditDialogOpen,

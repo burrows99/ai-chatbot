@@ -270,7 +270,6 @@ export const createStandardHandlers = (params: {
   contextData: any;
   setArtifactData: (key: string, data: any) => void;
   selectedItems: string[];
-  type: "gantt" | "dataGrid" | "kanban";
   idField: string;
   setEditingData: (data: any) => void;
   setEditDialogOpen: (open: boolean) => void;
@@ -282,7 +281,6 @@ export const createStandardHandlers = (params: {
     contextData,
     setArtifactData,
     selectedItems,
-    type,
     idField,
     setEditingData,
     setEditDialogOpen,
@@ -359,7 +357,9 @@ export const createStandardHandlers = (params: {
     );
     setArtifactData("canvasArtifact", {
       data: updatedData,
-      [`${type}SelectedItems`]: [],
+      ganttSelectedItems: [],
+      dataGridSelectedItems: [],
+      kanbanSelectedItems: [],
     });
   };
 

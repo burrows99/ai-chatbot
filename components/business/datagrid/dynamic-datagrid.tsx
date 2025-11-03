@@ -140,8 +140,7 @@ const DynamicDataGrid = () => {
   const handlers = createStandardHandlers({
     contextData,
     setArtifactData,
-    selectedItems: dataGridSelectedItems, 
-    type: "dataGrid",
+    selectedItems: dataGridSelectedItems,
     idField,
     setEditingData,
     setEditDialogOpen,

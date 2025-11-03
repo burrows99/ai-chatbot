@@ -200,7 +200,6 @@ const DynamicGantt = () => {
       contextData,
       setArtifactData,
       selectedItems: ganttSelectedItems,
-      type: "gantt",
       idField,
       setEditingData,
       setEditDialogOpen,

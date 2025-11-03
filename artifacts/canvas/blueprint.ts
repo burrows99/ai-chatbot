@@ -37,10 +37,8 @@ export type FieldConfig = {
   readonly type: FieldType;
 };
 
-export type FieldConfigLike = FieldConfig | string;
-
 export type CanvasData = {
-  readonly [fieldName: string]: FieldConfigLike;
+  readonly [fieldName: string]: FieldConfig;
 };
 
 export const fieldTypes = {
@@ -145,6 +143,5 @@ export const exampleCanvasData: readonly CanvasData[] = [
     ),
     field4: createDateField("API Name of field4", "2024-12-31", "Date Field 2"),
     field5: createDateField("API Name of field5", "2024-12-31", "Date Field 2"),
-    important: 'You can add more fields as needed.'
   },
 ] as const;
