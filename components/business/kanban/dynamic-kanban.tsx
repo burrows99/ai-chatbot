@@ -74,7 +74,13 @@ const DynamicKanban = () => {
     () => detectFieldMappings(firstRecord),
     [firstRecord]
   );
-  const { idField, dateField, columnField, descriptionField } = fieldMappings;
+  const {
+    idField,
+    startDateField,
+    endDateField,
+    columnField,
+    descriptionField,
+  } = fieldMappings;
   const newColumns = useMemo(() => columns, [columns]);
 
   const features = useMemo(() => {
@@ -89,8 +95,10 @@ const DynamicKanban = () => {
       return filteredData.map((item: any, index: number) => {
         const idValue = item[idField]?.value || `item-${index}`;
         const nameValue = item[idField]?.value || `Item ${index + 1}`;
-        const dateValue =
-          item[dateField]?.value || new Date().toISOString().split("T")[0];
+        const startDateValue =
+          item[startDateField]?.value || new Date().toISOString().split("T")[0];
+        const endDateValue =
+          item[endDateField]?.value || new Date().toISOString().split("T")[0];
         const columnValue =
           item[columnField]?.value || newColumns[0]?.id || "Default";
         const descriptionValue = item[descriptionField]?.value || "";
@@ -98,8 +106,8 @@ const DynamicKanban = () => {
           id: String(idValue),
           name: String(nameValue),
           description: String(descriptionValue),
-          startAt: new Date(dateValue),
-          endAt: new Date(dateValue),
+          startAt: new Date(startDateValue),
+          endAt: new Date(endDateValue),
           column: String(columnValue),
           owner: {
             name: item.owner?.value || "Unassigned",
@@ -114,7 +122,8 @@ const DynamicKanban = () => {
   }, [
     data,
     idField,
-    dateField,
+    startDateField,
+    endDateField,
     columnField,
     descriptionField,
     newColumns,
@@ -128,7 +137,7 @@ const DynamicKanban = () => {
       updatedFeatures: KanbanFeature[],
       fieldMappings: {
         idField: string;
-        dateField: string;
+        startDateField: string;
         columnField: string;
       }
     ): any => {

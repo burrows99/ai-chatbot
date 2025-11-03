@@ -23,7 +23,8 @@ export type BaseColumn = {
 
 export type FieldMappings = {
   idField: string;
-  dateField: string;
+  startDateField: string;
+  endDateField: string;
   columnField: string;
   descriptionField: string;
 };
@@ -90,15 +91,21 @@ export const detectFieldMappings = (sampleRecord: any): FieldMappings => {
     Object.keys(sampleRecord)[0] ||
     "field1";
 
-  const dateField =
+  const startDateField =
     Object.keys(sampleRecord).find(
       (fieldNumber) => sampleRecord[fieldNumber]?.type?.name === "date"
     ) ||
-    Object.keys(sampleRecord).find(
-      (fieldNumber) => sampleRecord[fieldNumber]?.type?.name === "text"
-    ) ||
     Object.keys(sampleRecord)[1] ||
     "field4";
+
+  const endDateField =
+    Object.keys(sampleRecord).find(
+      (fieldNumber) =>
+        sampleRecord[fieldNumber]?.type?.name === "date" &&
+        fieldNumber !== startDateField
+    ) ||
+    Object.keys(sampleRecord)[1] ||
+    "field5";
 
   const columnField =
     Object.keys(sampleRecord).find(
@@ -114,7 +121,13 @@ export const detectFieldMappings = (sampleRecord: any): FieldMappings => {
       (fieldNumber) => sampleRecord[fieldNumber]?.type?.name === "textArea"
     ) || "field2";
 
-  return { idField, dateField, columnField, descriptionField };
+  return {
+    idField,
+    startDateField,
+    endDateField,
+    columnField,
+    descriptionField,
+  };
 };
 
 // Create a cloned record with cleared values for adding new items
@@ -225,7 +238,7 @@ export const filterDataBySearch = (
     // Search in all mapped fields
     const fieldsToSearch = [
       fieldMappings.idField,
-      fieldMappings.dateField,
+      fieldMappings.startDateField,
       fieldMappings.columnField,
       fieldMappings.descriptionField,
     ];

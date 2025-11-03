@@ -103,20 +103,25 @@ export const createDropdownField = (
 // Example data with proper typing
 export const exampleCanvasData: readonly CanvasData[] = [
   {
-    field1: createTextField("API Name of field1", "Sample text", "Text Field"),
+    field1: createTextField(
+      "API Name of field1",
+      "Sample text",
+      "Text Field 1"
+    ),
     field2: createTextareaField(
       "API Name of field2",
       "Sample textarea content",
-      "Textarea Field"
+      "Textarea Field 1"
     ),
     field3: createDropdownField(
       "API Name of field3",
       "option1",
-      "Dropdown Field",
+      "Dropdown Field 1",
       ["option1", "option2", "option3"],
       "option1"
     ),
-    field4: createDateField("API Name of field4", "2024-01-01", "Date Field"),
+    field4: createDateField("API Name of field4", "2024-01-01", "Date Field 1"),
+    field5: createDateField("API Name of field5", "2024-01-01", "Date Field 1"),
   },
   {
     field1: createTextField(
@@ -137,5 +142,6 @@ export const exampleCanvasData: readonly CanvasData[] = [
       "option1"
     ),
     field4: createDateField("API Name of field4", "2024-12-31", "Date Field 2"),
+    field5: createDateField("API Name of field5", "2024-12-31", "Date Field 2"),
   },
 ] as const;

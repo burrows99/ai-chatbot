@@ -26,12 +26,30 @@ export const canvasArtifact = new Artifact<"canvas", Metadata>({
       }));
     }
   },
-  content: ({ content, status }) => {
-    if (status === "streaming" && !content) {
+  content: ({
+    content,
+    status,
+    isCurrentVersion,
+    currentVersionIndex,
+    onSaveContent,
+    isLoading,
+    metadata,
+  }) => {
+    if (isLoading || (status === "streaming" && !content)) {
       return <DocumentSkeleton artifactKind="canvas" />;
     }
 
-    return <CanvasViewer content={content} />;
+    return (
+      <div className="flex h-full flex-col">
+        <CanvasViewer
+          currentVersionIndex={currentVersionIndex}
+          isCurrentVersion={isCurrentVersion}
+          metadata={metadata}
+          onSaveContent={onSaveContent}
+          status={status}
+        />
+      </div>
+    );
   },
   actions: [
     {

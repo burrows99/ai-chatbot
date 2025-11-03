@@ -16,6 +16,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - ai-chatbot-network
 
   redis:
     image: redis:7-alpine
@@ -31,6 +33,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - ai-chatbot-network
 
   minio:
     image: quay.io/minio/minio:latest
@@ -46,12 +50,40 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live || exit 1"]
+      test: ["CMD", "mc", "ready", "local"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - ai-chatbot-network
+
+  app:
+    image: node:20
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.pnpm-store
+    command: sh -c "corepack enable pnpm && pnpm install && pnpm run db:migrate && pnpm dev"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ai-chatbot-network
 
 volumes:
   db_data:
   redis_data:
   minio_data:
+
+networks:
+  ai-chatbot-network:
+    driver: bridge

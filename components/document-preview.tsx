@@ -10,6 +10,7 @@ import {
   useRef,
 } from "react";
 import useSWR from "swr";
+import CanvasViewer from "@/components/business/canvas-viewer/canvas-viewer";
 import { useArtifact } from "@/hooks/use-artifact";
 import type { Document } from "@/lib/db/schema";
 import { cn, fetcher } from "@/lib/utils";
@@ -278,6 +279,18 @@ const DocumentContent = ({ document }: { document: Document }) => {
         <div className="relative flex size-full flex-1 p-4">
           <div className="absolute inset-0">
             <SpreadsheetEditor {...commonProps} />
+          </div>
+        </div>
+      ) : document.kind === "canvas" ? (
+        <div className="relative flex size-full flex-1">
+          <div className="absolute inset-0">
+            <CanvasViewer
+              currentVersionIndex={commonProps.currentVersionIndex}
+              isCurrentVersion={commonProps.isCurrentVersion}
+              metadata={{ jsonData: null }}
+              onSaveContent={handleSaveContent}
+              status={commonProps.status}
+            />
           </div>
         </div>
       ) : document.kind === "image" ? (

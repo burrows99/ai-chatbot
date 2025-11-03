@@ -89,7 +89,7 @@ function JsonNode({
     <div
       className={cn("group/object pl-4", level > 0 && "border-border border-l")}
     >
-      {/** biome-ignore lint/a11y/useSemanticElements: <explanation> */}
+      {/** biome-ignore lint/a11y/useSemanticElements: div used for interactive element */}
       <div
         aria-expanded={isExpandable ? isExpanded : undefined}
         className={cn(
@@ -201,7 +201,7 @@ function JsonValue({ data }: { data: any }) {
     case "string":
       if (data.length > TEXT_LIMIT) {
         return (
-          // biome-ignore lint/a11y/useSemanticElements: <explanation>
+          // biome-ignore lint/a11y/useSemanticElements: div used for expandable text content
           <div
             aria-expanded={isExpanded}
             className="group relative flex flex-1 cursor-pointer items-center text-emerald-500"
