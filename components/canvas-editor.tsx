@@ -48,7 +48,7 @@ type LayoutConfig = {
 type CanvasData = {
   fieldConfig: FieldConfig[];
   data: Record<string, any>[];
-  layout: LayoutConfig;
+  layout?: LayoutConfig;
 };
 
 type CanvasEditorProps = {
@@ -290,13 +290,13 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
     }
 
     // Auto-detect based on layout visibility
-    if (layout.kanban.visible) {
+    if (layout?.kanban?.visible) {
       return "kanban";
     }
-    if (layout.table.visible) {
+    if (layout?.table?.visible) {
       return "table";
     }
-    if (layout.gantt.visible) {
+    if (layout?.gantt?.visible) {
       return "gantt";
     }
 
@@ -315,7 +315,7 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
         >
           Auto
         </Button>
-        {layout.kanban.visible && (
+        {layout?.kanban?.visible && (
           <Button
             onClick={() => setActiveView("kanban")}
             size="sm"
@@ -324,7 +324,7 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
             Kanban
           </Button>
         )}
-        {layout.table.visible && (
+        {layout?.table?.visible && (
           <Button
             onClick={() => setActiveView("table")}
             size="sm"
@@ -333,7 +333,7 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
             Table
           </Button>
         )}
-        {layout.gantt.visible && (
+        {layout?.gantt?.visible && (
           <Button
             onClick={() => setActiveView("gantt")}
             size="sm"
@@ -349,7 +349,7 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
           <KanbanView
             data={data}
             fieldConfig={fieldConfig}
-            groupBy={layout.kanban.groupBy}
+            groupBy={layout?.kanban?.groupBy}
           />
         )}
         {currentView === "table" && (
@@ -358,9 +358,9 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
         {currentView === "gantt" && (
           <GanttView
             data={data}
-            endDateField={layout.gantt.endDateField}
+            endDateField={layout?.gantt?.endDateField}
             fieldConfig={fieldConfig}
-            startDateField={layout.gantt.startDateField}
+            startDateField={layout?.gantt?.startDateField}
           />
         )}
       </div>

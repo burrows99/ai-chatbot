@@ -14,6 +14,7 @@ import { useArtifact } from "@/hooks/use-artifact";
 import type { Document } from "@/lib/db/schema";
 import { cn, fetcher } from "@/lib/utils";
 import type { ArtifactKind, UIArtifact } from "./artifact";
+import { CanvasEditor } from "./canvas-editor";
 import { CodeEditor } from "./code-editor";
 import { DocumentToolCall, DocumentToolResult } from "./document";
 import { InlineDocumentSkeleton } from "./document-skeleton";
@@ -289,6 +290,12 @@ const DocumentContent = ({ document }: { document: Document }) => {
           status={artifact.status}
           title={document.title}
         />
+      ) : document.kind === "canvas" ? (
+        <div className="relative flex size-full flex-1 p-4">
+          <div className="absolute inset-0">
+            <CanvasEditor {...commonProps} />
+          </div>
+        </div>
       ) : null}
     </div>
   );

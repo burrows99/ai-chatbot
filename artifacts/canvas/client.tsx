@@ -1,13 +1,64 @@
+import { useState } from "react";
 import { toast } from "sonner";
 import { CanvasEditor } from "@/components/canvas-editor";
 import { CanvasJsonView } from "@/components/canvas-json-view";
 import { Artifact } from "@/components/create-artifact";
 import { DocumentSkeleton } from "@/components/document-skeleton";
-import { CopyIcon, DeltaIcon, RedoIcon, UndoIcon } from "@/components/icons";
+import { CopyIcon, RedoIcon, UndoIcon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 
 type Metadata = {
   viewMode: "canvas" | "json";
 };
+
+function CanvasArtifactContent({
+  content,
+  currentVersionIndex,
+  onSaveContent,
+  status,
+  isLoading,
+  isCurrentVersion,
+}: {
+  content: string;
+  currentVersionIndex: number;
+  onSaveContent: (content: string, debounce: boolean) => void;
+  status: "streaming" | "idle";
+  isLoading: boolean;
+  isCurrentVersion: boolean;
+}) {
+  const [viewMode, setViewMode] = useState<"canvas" | "json">("canvas");
+
+  if (isLoading) {
+    return <DocumentSkeleton artifactKind="canvas" />;
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-end gap-2 border-b p-2">
+        <Button
+          onClick={() => setViewMode(viewMode === "canvas" ? "json" : "canvas")}
+          size="sm"
+          variant="outline"
+        >
+          {viewMode === "canvas" ? "View JSON" : "View Canvas"}
+        </Button>
+      </div>
+      <div className="flex-1 overflow-hidden">
+        {viewMode === "json" ? (
+          <CanvasJsonView content={content} />
+        ) : (
+          <CanvasEditor
+            content={content}
+            currentVersionIndex={currentVersionIndex}
+            isCurrentVersion={isCurrentVersion}
+            saveContent={onSaveContent}
+            status={status}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
 export const canvasArtifact = new Artifact<"canvas", Metadata>({
   kind: "canvas",
@@ -28,35 +79,7 @@ export const canvasArtifact = new Artifact<"canvas", Metadata>({
       }));
     }
   },
-  content: ({
-    content,
-    currentVersionIndex,
-    onSaveContent,
-    status,
-    isLoading,
-    metadata,
-    isCurrentVersion,
-  }) => {
-    if (isLoading) {
-      return <DocumentSkeleton artifactKind="canvas" />;
-    }
-
-    const viewMode = metadata?.viewMode || "canvas";
-
-    if (viewMode === "json") {
-      return <CanvasJsonView content={content} />;
-    }
-
-    return (
-      <CanvasEditor
-        content={content}
-        currentVersionIndex={currentVersionIndex}
-        isCurrentVersion={isCurrentVersion}
-        saveContent={onSaveContent}
-        status={status}
-      />
-    );
-  },
+  content: CanvasArtifactContent,
   actions: [
     {
       icon: <UndoIcon size={18} />,
@@ -101,16 +124,5 @@ export const canvasArtifact = new Artifact<"canvas", Metadata>({
       },
     },
   ],
-  toolbar: [
-    {
-      description: "Toggle Canvas View",
-      icon: <DeltaIcon />,
-      onClick: ({ metadata, setMetadata }: any) => {
-        setMetadata({
-          ...metadata,
-          viewMode: metadata?.viewMode === "canvas" ? "json" : "canvas",
-        });
-      },
-    },
-  ],
+  toolbar: [],
 });
