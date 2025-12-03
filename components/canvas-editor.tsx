@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +9,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Toolbar } from "@/components/ui/data-toolbar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type FieldType =
   | "number"
@@ -51,6 +61,10 @@ type CanvasData = {
   layout?: LayoutConfig;
 };
 
+type DataRecord = Record<string, any> & {
+  isSelected?: boolean;
+};
+
 type CanvasEditorProps = {
   content: string;
   currentVersionIndex: number;
@@ -63,24 +77,26 @@ function KanbanView({
   data,
   fieldConfig,
   groupBy,
+  onToggleSelect,
 }: {
-  data: Record<string, any>[];
+  data: DataRecord[];
   fieldConfig: FieldConfig[];
   groupBy?: string;
+  onToggleSelect: (index: number) => void;
 }) {
   const groupedData = useMemo(() => {
     if (!groupBy) {
-      return { Ungrouped: data };
+      return { Ungrouped: data.map((item, idx) => ({ item, originalIndex: idx })) };
     }
 
-    const groups: Record<string, Record<string, any>[]> = {};
+    const groups: Record<string, { item: DataRecord; originalIndex: number }[]> = {};
 
-    for (const item of data) {
+    for (const [idx, item] of data.entries()) {
       const groupValue = String(item[groupBy] || "Ungrouped");
       if (!groups[groupValue]) {
         groups[groupValue] = [];
       }
-      groups[groupValue].push(item);
+      groups[groupValue].push({ item, originalIndex: idx });
     }
 
     return groups;
@@ -106,17 +122,30 @@ function KanbanView({
             <CardContent>
               <ScrollArea className="h-[600px]">
                 <div className="space-y-3">
-                  {items.map((item) => (
-                    <Card key={JSON.stringify(item)}>
+                  {items.map(({ item, originalIndex }) => (
+                    <Card 
+                      key={originalIndex}
+                      className={item.isSelected ? "ring-2 ring-primary" : ""}
+                    >
                       <CardContent className="p-3">
-                        {Object.entries(item).map(([key, value]) => (
-                          <div className="mb-2 text-sm" key={key}>
-                            <span className="font-medium text-muted-foreground">
-                              {getFieldLabel(key)}:
-                            </span>{" "}
-                            <span>{String(value)}</span>
+                        <div className="mb-2 flex items-start gap-2">
+                          <Checkbox
+                            checked={item.isSelected || false}
+                            onCheckedChange={() => onToggleSelect(originalIndex)}
+                          />
+                          <div className="flex-1">
+                            {Object.entries(item)
+                              .filter(([key]) => key !== "isSelected")
+                              .map(([key, value]) => (
+                                <div className="mb-2 text-sm" key={key}>
+                                  <span className="font-medium text-muted-foreground">
+                                    {getFieldLabel(key)}:
+                                  </span>{" "}
+                                  <span>{String(value)}</span>
+                                </div>
+                              ))}
                           </div>
-                        ))}
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -133,39 +162,57 @@ function KanbanView({
 function TableView({
   data,
   fieldConfig,
+  onToggleSelect,
+  onToggleSelectAll,
 }: {
-  data: Record<string, any>[];
+  data: DataRecord[];
   fieldConfig: FieldConfig[];
+  onToggleSelect: (index: number) => void;
+  onToggleSelectAll: () => void;
 }) {
+  const allSelected = data.length > 0 && data.every((item) => item.isSelected);
+  const someSelected = data.some((item) => item.isSelected) && !allSelected;
+
   return (
     <div className="h-full overflow-auto p-4">
-      <div className="rounded-md border">
-        <table className="w-full">
-          <thead className="bg-muted">
-            <tr>
-              {fieldConfig.map((field) => (
-                <th
-                  className="px-4 py-2 text-left font-medium text-sm"
-                  key={field.apiname}
-                >
-                  {field.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row) => (
-              <tr className="border-t" key={JSON.stringify(row)}>
-                {fieldConfig.map((field) => (
-                  <td className="px-4 py-2 text-sm" key={field.apiname}>
-                    {String(row[field.apiname] || "")}
-                  </td>
-                ))}
-              </tr>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-12">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={onToggleSelectAll}
+                aria-label="Select all"
+                className={someSelected ? "opacity-50" : ""}
+              />
+            </TableHead>
+            {fieldConfig.map((field) => (
+              <TableHead key={field.apiname}>{field.label}</TableHead>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((row, index) => (
+            <TableRow
+              key={index}
+              data-state={row.isSelected ? "selected" : undefined}
+            >
+              <TableCell>
+                <Checkbox
+                  checked={row.isSelected || false}
+                  onCheckedChange={() => onToggleSelect(index)}
+                  aria-label={`Select row ${index + 1}`}
+                />
+              </TableCell>
+              {fieldConfig.map((field) => (
+                <TableCell key={field.apiname}>
+                  {String(row[field.apiname] || "")}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
@@ -175,11 +222,13 @@ function GanttView({
   fieldConfig,
   startDateField,
   endDateField,
+  onToggleSelect,
 }: {
-  data: Record<string, any>[];
+  data: DataRecord[];
   fieldConfig: FieldConfig[];
   startDateField?: string;
   endDateField?: string;
+  onToggleSelect: (index: number) => void;
 }) {
   const getFieldLabel = (apiname: string) => {
     return fieldConfig.find((f) => f.apiname === apiname)?.label || apiname;
@@ -206,33 +255,42 @@ function GanttView({
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {data.map((item) => {
+            {data.map((item, index) => {
               const startDate = startDateField ? item[startDateField] : null;
               const endDate = endDateField ? item[endDateField] : null;
 
               return (
-                <Card key={JSON.stringify(item)}>
+                <Card 
+                  key={index}
+                  className={item.isSelected ? "ring-2 ring-primary" : ""}
+                >
                   <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">
-                          {titleField
-                            ? item[titleField]
-                            : `Item ${data.indexOf(item) + 1}`}
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={item.isSelected || false}
+                        onCheckedChange={() => onToggleSelect(index)}
+                      />
+                      <div className="flex flex-1 items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">
+                            {titleField
+                              ? item[titleField]
+                              : `Item ${index + 1}`}
+                          </div>
+                          <div className="mt-1 text-muted-foreground text-xs">
+                            {startDate && (
+                              <span>
+                                {startDate}
+                                {endDate && ` → ${endDate}`}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="mt-1 text-muted-foreground text-xs">
-                          {startDate && (
-                            <span>
-                              {startDate}
-                              {endDate && ` → ${endDate}`}
-                            </span>
-                          )}
+                        <div className="ml-4">
+                          <Badge variant="outline">
+                            {Object.keys(item).filter(k => k !== "isSelected").length} fields
+                          </Badge>
                         </div>
-                      </div>
-                      <div className="ml-4">
-                        <Badge variant="outline">
-                          {Object.keys(item).length} fields
-                        </Badge>
                       </div>
                     </div>
                   </CardContent>
@@ -250,7 +308,7 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
   content,
   currentVersionIndex: _currentVersionIndex,
   isCurrentVersion: _isCurrentVersion,
-  saveContent: _saveContent,
+  saveContent,
   status: _status,
 }: CanvasEditorProps) {
   const [activeView, setActiveView] = useState<
@@ -264,6 +322,119 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
       return null;
     }
   }, [content]);
+
+  // Local state for data with selection
+  const [localData, setLocalData] = useState<DataRecord[]>([]);
+
+  // Initialize localData when canvasData changes
+  useEffect(() => {
+    if (canvasData?.data) {
+      setLocalData(
+        canvasData.data.map((item) => ({
+          ...item,
+          isSelected: item.isSelected || false,
+        }))
+      );
+    }
+  }, [canvasData]);
+
+  // Selection handlers
+  const handleToggleSelect = useCallback((index: number) => {
+    setLocalData((prev) => {
+      const newData = [...prev];
+      newData[index] = {
+        ...newData[index],
+        isSelected: !newData[index].isSelected,
+      };
+      
+      // Save to content
+      if (canvasData) {
+        const updatedCanvas = {
+          ...canvasData,
+          data: newData,
+        };
+        saveContent(JSON.stringify(updatedCanvas, null, 2), true);
+      }
+      
+      return newData;
+    });
+  }, [canvasData, saveContent]);
+
+  const handleToggleSelectAll = useCallback(() => {
+    setLocalData((prev) => {
+      const allSelected = prev.every((item) => item.isSelected);
+      const newData = prev.map((item) => ({
+        ...item,
+        isSelected: !allSelected,
+      }));
+      
+      // Save to content
+      if (canvasData) {
+        const updatedCanvas = {
+          ...canvasData,
+          data: newData,
+        };
+        saveContent(JSON.stringify(updatedCanvas, null, 2), true);
+      }
+      
+      return newData;
+    });
+  }, [canvasData, saveContent]);
+
+  // Toolbar handlers
+  const handleAdd = useCallback(() => {
+    // Create a new record with default values
+    const newRecord: DataRecord = { isSelected: false };
+    
+    if (canvasData?.fieldConfig) {
+      for (const field of canvasData.fieldConfig) {
+        newRecord[field.apiname] = field.defaultvalue || "";
+      }
+    }
+
+    setLocalData((prev) => {
+      const newData = [...prev, newRecord];
+      
+      // Save to content
+      if (canvasData) {
+        const updatedCanvas = {
+          ...canvasData,
+          data: newData,
+        };
+        saveContent(JSON.stringify(updatedCanvas, null, 2), true);
+      }
+      
+      return newData;
+    });
+  }, [canvasData, saveContent]);
+
+  const handleEdit = useCallback(() => {
+    // For now, just log that edit was clicked
+    // In a real implementation, this would open an edit dialog
+    const selectedIndex = localData.findIndex((item) => item.isSelected);
+    if (selectedIndex !== -1) {
+      console.log("Edit item at index:", selectedIndex);
+    }
+  }, [localData]);
+
+  const handleDelete = useCallback(() => {
+    setLocalData((prev) => {
+      const newData = prev.filter((item) => !item.isSelected);
+      
+      // Save to content
+      if (canvasData) {
+        const updatedCanvas = {
+          ...canvasData,
+          data: newData,
+        };
+        saveContent(JSON.stringify(updatedCanvas, null, 2), true);
+      }
+      
+      return newData;
+    });
+  }, [canvasData, saveContent]);
+
+  const selectedCount = localData.filter((item) => item.isSelected).length;
 
   if (!canvasData) {
     return (
@@ -281,7 +452,7 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
     );
   }
 
-  const { fieldConfig, data, layout } = canvasData;
+  const { fieldConfig, layout } = canvasData;
 
   // Determine which view to show based on layout config or active view
   const getViewToShow = () => {
@@ -307,6 +478,12 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
 
   return (
     <div className="flex h-full flex-col">
+      <Toolbar
+        selectedCount={selectedCount}
+        onAdd={handleAdd}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
       <div className="flex gap-2 border-b p-2">
         <Button
           onClick={() => setActiveView("auto")}
@@ -347,20 +524,27 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
       <div className="flex-1 overflow-hidden">
         {currentView === "kanban" && (
           <KanbanView
-            data={data}
+            data={localData}
             fieldConfig={fieldConfig}
             groupBy={layout?.kanban?.groupBy}
+            onToggleSelect={handleToggleSelect}
           />
         )}
         {currentView === "table" && (
-          <TableView data={data} fieldConfig={fieldConfig} />
+          <TableView 
+            data={localData} 
+            fieldConfig={fieldConfig}
+            onToggleSelect={handleToggleSelect}
+            onToggleSelectAll={handleToggleSelectAll}
+          />
         )}
         {currentView === "gantt" && (
           <GanttView
-            data={data}
+            data={localData}
             endDateField={layout?.gantt?.endDateField}
             fieldConfig={fieldConfig}
             startDateField={layout?.gantt?.startDateField}
+            onToggleSelect={handleToggleSelect}
           />
         )}
       </div>
