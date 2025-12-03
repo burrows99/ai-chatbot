@@ -172,6 +172,7 @@ function TableView({
 }) {
   const allSelected = data.length > 0 && data.every((item) => item.isSelected);
   const someSelected = data.some((item) => item.isSelected) && !allSelected;
+  const headerCheckboxState = allSelected ? true : (someSelected ? "indeterminate" : false);
 
   return (
     <div className="h-full overflow-auto p-4">
@@ -180,10 +181,9 @@ function TableView({
           <TableRow>
             <TableHead className="w-12">
               <Checkbox
-                checked={allSelected}
+                checked={headerCheckboxState}
                 onCheckedChange={onToggleSelectAll}
                 aria-label="Select all"
-                className={someSelected ? "opacity-50" : ""}
               />
             </TableHead>
             {fieldConfig.map((field) => (
@@ -242,6 +242,11 @@ function GanttView({
         f.apiname !== endDateField
     )?.apiname || fieldConfig[0]?.apiname;
 
+  // Memoize field counts to avoid recalculation on every render
+  const itemFieldCounts = useMemo(() => {
+    return data.map(item => Object.keys(item).filter(k => k !== "isSelected").length);
+  }, [data]);
+
   return (
     <div className="h-full overflow-auto p-4">
       <Card>
@@ -288,7 +293,7 @@ function GanttView({
                         </div>
                         <div className="ml-4">
                           <Badge variant="outline">
-                            {Object.keys(item).filter(k => k !== "isSelected").length} fields
+                            {itemFieldCounts[index]} fields
                           </Badge>
                         </div>
                       </div>
@@ -338,6 +343,17 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
     }
   }, [canvasData]);
 
+  // Helper function to save canvas data
+  const saveCanvasData = useCallback((newData: DataRecord[]) => {
+    if (canvasData) {
+      const updatedCanvas = {
+        ...canvasData,
+        data: newData,
+      };
+      saveContent(JSON.stringify(updatedCanvas, null, 2), true);
+    }
+  }, [canvasData, saveContent]);
+
   // Selection handlers
   const handleToggleSelect = useCallback((index: number) => {
     setLocalData((prev) => {
@@ -347,18 +363,10 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
         isSelected: !newData[index].isSelected,
       };
       
-      // Save to content
-      if (canvasData) {
-        const updatedCanvas = {
-          ...canvasData,
-          data: newData,
-        };
-        saveContent(JSON.stringify(updatedCanvas, null, 2), true);
-      }
-      
+      saveCanvasData(newData);
       return newData;
     });
-  }, [canvasData, saveContent]);
+  }, [saveCanvasData]);
 
   const handleToggleSelectAll = useCallback(() => {
     setLocalData((prev) => {
@@ -368,18 +376,10 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
         isSelected: !allSelected,
       }));
       
-      // Save to content
-      if (canvasData) {
-        const updatedCanvas = {
-          ...canvasData,
-          data: newData,
-        };
-        saveContent(JSON.stringify(updatedCanvas, null, 2), true);
-      }
-      
+      saveCanvasData(newData);
       return newData;
     });
-  }, [canvasData, saveContent]);
+  }, [saveCanvasData]);
 
   // Toolbar handlers
   const handleAdd = useCallback(() => {
@@ -394,45 +394,28 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
 
     setLocalData((prev) => {
       const newData = [...prev, newRecord];
-      
-      // Save to content
-      if (canvasData) {
-        const updatedCanvas = {
-          ...canvasData,
-          data: newData,
-        };
-        saveContent(JSON.stringify(updatedCanvas, null, 2), true);
-      }
-      
+      saveCanvasData(newData);
       return newData;
     });
-  }, [canvasData, saveContent]);
+  }, [canvasData, saveCanvasData]);
 
   const handleEdit = useCallback(() => {
+    // TODO: Implement edit dialog
     // For now, just log that edit was clicked
-    // In a real implementation, this would open an edit dialog
     const selectedIndex = localData.findIndex((item) => item.isSelected);
     if (selectedIndex !== -1) {
       console.log("Edit item at index:", selectedIndex);
+      // Future: Open edit dialog/modal with form
     }
   }, [localData]);
 
   const handleDelete = useCallback(() => {
     setLocalData((prev) => {
       const newData = prev.filter((item) => !item.isSelected);
-      
-      // Save to content
-      if (canvasData) {
-        const updatedCanvas = {
-          ...canvasData,
-          data: newData,
-        };
-        saveContent(JSON.stringify(updatedCanvas, null, 2), true);
-      }
-      
+      saveCanvasData(newData);
       return newData;
     });
-  }, [canvasData, saveContent]);
+  }, [saveCanvasData]);
 
   const selectedCount = localData.filter((item) => item.isSelected).length;
 
