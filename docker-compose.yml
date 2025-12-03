@@ -1,0 +1,114 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    container_name: aix_postgres
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-chatbot-network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    container_name: aix_redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-chatbot-network
+
+  redis_insight:
+    image: redis/redisinsight:latest
+    container_name: aix_redis_insight
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    environment:
+      # Auto-accept license so you don't get the annoying popup
+      RI_ACCEPT_TERMS_AND_CONDITIONS: "true"
+
+      # Preconfigure a single Redis connection
+      # If you only have one connection, you can omit the suffix and it defaults to ID=0
+      RI_REDIS_HOST: redis # <- service name from this compose file
+      RI_REDIS_PORT: "6379"
+      RI_REDIS_ALIAS: "Local Redis (aix_redis)"
+      RI_REDIS_DB: "0"
+      # If you had auth:
+      # RI_REDIS_USERNAME: "default"
+      # RI_REDIS_PASSWORD: "yourpassword"
+    volumes:
+      - redis_insight_data:/data
+    networks:
+      - ai-chatbot-network
+
+  minio:
+    image: quay.io/minio/minio:latest
+    restart: unless-stopped
+    container_name: aix_minio
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-chatbot-network
+
+  # app:
+  #   image: node:20
+  #   working_dir: /app
+  #   ports:
+  #     - "3000:3000"
+  #   env_file:
+  #     - .env.docker
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+  #     - /app/.pnpm-store
+  #   command: sh -c "corepack enable pnpm && pnpm install && pnpm run db:migrate && pnpm dev"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     minio:
+  #       condition: service_healthy
+  #   networks:
+  #     - ai-chatbot-network
+
+volumes:
+  db_data:
+  redis_data:
+  minio_data:
+  redis_insight_data:
+
+networks:
+  ai-chatbot-network:
+    driver: bridge

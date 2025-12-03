@@ -4,7 +4,13 @@ import {
   extractReasoningMiddleware,
   wrapLanguageModel,
 } from "ai";
+import { createOllama } from "ollama-ai-provider";
 import { isTestEnvironment } from "../constants";
+
+// Ollama setup for local development
+export const ollama = createOllama({
+  baseURL: process.env.OLLAMA_BASE_URL,
+});
 
 export const myProvider = isTestEnvironment
   ? (() => {
