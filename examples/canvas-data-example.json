@@ -1,0 +1,106 @@
+{
+  "fieldConfig": [
+    {
+      "apiname": "id",
+      "label": "ID",
+      "type": "id",
+      "defaultvalue": ""
+    },
+    {
+      "apiname": "title",
+      "label": "Task Title",
+      "type": "text",
+      "defaultvalue": "New Task"
+    },
+    {
+      "apiname": "status",
+      "label": "Status",
+      "type": "select",
+      "allowedvalues": ["Todo", "In Progress", "Done"],
+      "defaultvalue": "Todo"
+    },
+    {
+      "apiname": "priority",
+      "label": "Priority",
+      "type": "select",
+      "allowedvalues": ["Low", "Medium", "High"],
+      "defaultvalue": "Medium"
+    },
+    {
+      "apiname": "startDate",
+      "label": "Start Date",
+      "type": "date",
+      "defaultvalue": "2024-01-01"
+    },
+    {
+      "apiname": "endDate",
+      "label": "End Date",
+      "type": "date",
+      "defaultvalue": "2024-01-15"
+    }
+  ],
+  "data": [
+    {
+      "id": "1",
+      "title": "Design Homepage",
+      "status": "Done",
+      "priority": "High",
+      "startDate": "2024-01-01",
+      "endDate": "2024-01-05",
+      "isSelected": false
+    },
+    {
+      "id": "2",
+      "title": "Implement Authentication",
+      "status": "In Progress",
+      "priority": "High",
+      "startDate": "2024-01-03",
+      "endDate": "2024-01-10",
+      "isSelected": true
+    },
+    {
+      "id": "3",
+      "title": "Write Documentation",
+      "status": "Todo",
+      "priority": "Medium",
+      "startDate": "2024-01-08",
+      "endDate": "2024-01-12",
+      "isSelected": false
+    },
+    {
+      "id": "4",
+      "title": "Setup CI/CD Pipeline",
+      "status": "In Progress",
+      "priority": "High",
+      "startDate": "2024-01-05",
+      "endDate": "2024-01-15",
+      "isSelected": true
+    },
+    {
+      "id": "5",
+      "title": "Add Unit Tests",
+      "status": "Todo",
+      "priority": "Medium",
+      "startDate": "2024-01-10",
+      "endDate": "2024-01-20",
+      "isSelected": false
+    }
+  ],
+  "layout": {
+    "kanban": {
+      "visible": true,
+      "position": "left",
+      "groupBy": "status"
+    },
+    "table": {
+      "visible": true,
+      "position": "right"
+    },
+    "gantt": {
+      "visible": true,
+      "position": "bottom",
+      "startDateField": "startDate",
+      "endDateField": "endDate"
+    }
+  }
+}
