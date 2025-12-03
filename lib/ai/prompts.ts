@@ -96,6 +96,21 @@ export const sheetPrompt = `
 You are a spreadsheet creation assistant. Create a spreadsheet in csv format based on the given prompt. The spreadsheet should contain meaningful column headers and data.
 `;
 
+export const canvasPrompt = `
+You are a canvas visualization assistant. Create a canvas configuration with data visualizations based on the given prompt.
+
+The canvas should include:
+1. fieldConfig: Define the data structure with fields (apiname, label, type, allowedvalues if select, defaultvalue)
+   - Field types: "number", "text", "id", "textarea", "date", "select", "checkbox"
+2. data: Provide sample data records that match the fieldConfig
+3. layout: Configure which views are visible (kanban, table, gantt) and their positions
+   - Positions: "left", "right", "top", "bottom"
+   - For kanban: include groupBy field (should be a select or text field)
+   - For gantt: include startDateField and endDateField (should be date fields)
+
+Create meaningful, realistic data that demonstrates the visualization effectively.
+`;
+
 export const updateDocumentPrompt = (
   currentContent: string | null,
   type: ArtifactKind
@@ -106,6 +121,8 @@ export const updateDocumentPrompt = (
     mediaType = "code snippet";
   } else if (type === "sheet") {
     mediaType = "spreadsheet";
+  } else if (type === "canvas") {
+    mediaType = "canvas visualization";
   }
 
   return `Improve the following contents of the ${mediaType} based on the given prompt.
