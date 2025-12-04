@@ -1,9 +1,8 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from "lucide-react";
+import * as React from "react";
+import { Button } from "@/components/ui/button";
 
 export type ColumnDef<TData> = {
   id?: string;
@@ -18,7 +17,7 @@ export type Column<TData> = {
   id: string;
   columnDef: ColumnDef<TData>;
   getCanSort: () => boolean;
-  getIsSorted: () => false | 'asc' | 'desc';
+  getIsSorted: () => false | "asc" | "desc";
   toggleSorting: (desc?: boolean) => void;
 };
 
@@ -55,7 +54,9 @@ type TableContextValue<TData> = {
   columns: ColumnDef<TData>[];
   data: TData[];
   sorting: { id: string; desc: boolean }[];
-  setSorting: React.Dispatch<React.SetStateAction<{ id: string; desc: boolean }[]>>;
+  setSorting: React.Dispatch<
+    React.SetStateAction<{ id: string; desc: boolean }[]>
+  >;
   getHeaderGroups: () => HeaderGroup<TData>[];
   getRows: () => Row<TData>[];
 };
@@ -65,51 +66,61 @@ const TableContext = React.createContext<TableContextValue<any> | null>(null);
 function useTable<TData>() {
   const context = React.useContext(TableContext);
   if (!context) {
-    throw new Error('Table components must be used within TableProvider');
+    throw new Error("Table components must be used within TableProvider");
   }
   return context as TableContextValue<TData>;
 }
 
-interface TableProviderProps<TData> {
+type TableProviderProps<TData> = {
   columns: ColumnDef<TData>[];
   data: TData[];
   children: React.ReactNode;
-}
+};
 
 export function TableProvider<TData>({
   columns,
   data,
   children,
 }: TableProviderProps<TData>) {
-  const [sorting, setSorting] = React.useState<{ id: string; desc: boolean }[]>([]);
+  const [sorting, setSorting] = React.useState<{ id: string; desc: boolean }[]>(
+    []
+  );
 
-  const getHeaderGroups = React.useCallback((): HeaderGroup<TData>[] => {
-    const headers: Header<TData>[] = columns.map((columnDef, index) => {
-      const columnId = columnDef.id || columnDef.accessorKey || `column-${index}`;
-      const column: Column<TData> = {
+  const createColumn = React.useCallback(
+    (columnDef: ColumnDef<TData>, index: number): Column<TData> => {
+      const columnId =
+        columnDef.id || columnDef.accessorKey || `column-${index}`;
+      return {
         id: columnId,
         columnDef,
         getCanSort: () => columnDef.enableSorting !== false,
         getIsSorted: () => {
-          const sort = sorting.find(s => s.id === columnId);
-          return sort ? (sort.desc ? 'desc' : 'asc') : false;
+          const sort = sorting.find((s) => s.id === columnId);
+          return sort ? (sort.desc ? "desc" : "asc") : false;
         },
         toggleSorting: (desc?: boolean) => {
-          setSorting(prev => {
-            const existing = prev.find(s => s.id === columnId);
+          setSorting((prev) => {
+            const existing = prev.find((s) => s.id === columnId);
             if (existing) {
               if (desc === undefined) {
-                return prev.filter(s => s.id !== columnId);
+                return prev.filter((s) => s.id !== columnId);
               }
-              return prev.map(s => s.id === columnId ? { ...s, desc } : s);
+              return prev.map((s) => (s.id === columnId ? { ...s, desc } : s));
             }
             return [...prev, { id: columnId, desc: desc ?? false }];
           });
         },
       };
+    },
+    [sorting]
+  );
+
+  const getHeaderGroups = React.useCallback((): HeaderGroup<TData>[] => {
+    const headers: Header<TData>[] = columns.map((columnDef, index) => {
+      const column = createColumn(columnDef, index);
 
       return {
-        id: columnId,
+        id: column.id,
         column,
         isPlaceholder: false,
         colSpan: 1,
@@ -118,15 +129,15 @@ export function TableProvider<TData>({
       };
     });
 
-    return [{ id: 'headerGroup-0', headers }];
-  }, [columns, sorting]);
+    return [{ id: "headerGroup-0", headers }];
+  }, [columns, createColumn]);
 
   const getRows = React.useCallback((): Row<TData>[] => {
-    let sortedData = [...data];
+    const sortedData = [...data];
 
     if (sorting.length > 0) {
       const sort = sorting[0];
-      const column = columns.find(c => (c.id || c.accessorKey) === sort.id);
+      const column = columns.find((c) => (c.id || c.accessorKey) === sort.id);
       if (column) {
         sortedData.sort((a, b) => {
           let aVal: any;
@@ -140,8 +151,12 @@ export function TableProvider<TData>({
             bVal = (b as any)[column.accessorKey];
           }
 
-          if (aVal < bVal) return sort.desc ? 1 : -1;
-          if (aVal > bVal) return sort.desc ? -1 : 1;
+          if (aVal < bVal) {
+            return sort.desc ? 1 : -1;
+          }
+          if (aVal > bVal) {
+            return sort.desc ? -1 : 1;
+          }
           return 0;
         });
       }
@@ -154,48 +169,29 @@ export function TableProvider<TData>({
         index,
         getVisibleCells: () => {
           return columns.map((columnDef, colIndex) => {
-            const columnId = columnDef.id || columnDef.accessorKey || `column-${colIndex}`;
-            const column: Column<TData> = {
-              id: columnId,
-              columnDef,
-              getCanSort: () => columnDef.enableSorting !== false,
-              getIsSorted: () => {
-                const sort = sorting.find(s => s.id === columnId);
-                return sort ? (sort.desc ? 'desc' : 'asc') : false;
-              },
-              toggleSorting: (desc?: boolean) => {
-                setSorting(prev => {
-                  const existing = prev.find(s => s.id === columnId);
-                  if (existing) {
-                    if (desc === undefined) {
-                      return prev.filter(s => s.id !== columnId);
-                    }
-                    return prev.map(s => s.id === columnId ? { ...s, desc } : s);
-                  }
-                  return [...prev, { id: columnId, desc: desc ?? false }];
-                });
-              },
-            };
+            const column = createColumn(columnDef, colIndex);
 
             const cell: Cell<TData> = {
-              id: `${row.id}-${columnId}`,
+              id: `${row.id}-${column.id}`,
               column,
               row,
               getValue: () => {
                 if (columnDef.accessorFn) {
                   return columnDef.accessorFn(item);
-                } else if (columnDef.accessorKey) {
+                }
+                if (columnDef.accessorKey) {
                   return (item as any)[columnDef.accessorKey];
                 }
-                return undefined;
+                return;
               },
               renderValue: () => {
                 if (columnDef.accessorFn) {
                   return columnDef.accessorFn(item);
-                } else if (columnDef.accessorKey) {
+                }
+                if (columnDef.accessorKey) {
                   return (item as any)[columnDef.accessorKey];
                 }
-                return undefined;
+                return;
               },
             };
 
@@ -206,7 +202,7 @@ export function TableProvider<TData>({
 
       return row;
     });
-  }, [data, columns, sorting]);
+  }, [data, columns, createColumn, sorting.length, sorting[0]]);
 
   const value = React.useMemo(
     () => ({
@@ -229,33 +225,40 @@ export function TableProvider<TData>({
   );
 }
 
-interface TableHeaderProps {
+type TableHeaderProps = {
   children: (context: { headerGroup: HeaderGroup<any> }) => React.ReactNode;
-}
+};
 
 export function TableHeader({ children }: TableHeaderProps) {
   const { getHeaderGroups } = useTable();
   const headerGroups = getHeaderGroups();
 
-  return <thead className="[&_tr]:border-b">{headerGroups.map(headerGroup => children({ headerGroup }))}</thead>;
+  return (
+    <thead className="[&_tr]:border-b">
+      {headerGroups.map((headerGroup) => children({ headerGroup }))}
+    </thead>
+  );
 }
 
-interface TableHeaderGroupProps {
+type TableHeaderGroupProps = {
   headerGroup: HeaderGroup<any>;
   children: (context: { header: Header<any> }) => React.ReactNode;
-}
+};
 
-export function TableHeaderGroup({ headerGroup, children }: TableHeaderGroupProps) {
+export function TableHeaderGroup({
+  headerGroup,
+  children,
+}: TableHeaderGroupProps) {
   return (
     <tr className="border-b transition-colors hover:bg-muted/50">
-      {headerGroup.headers.map(header => children({ header }))}
+      {headerGroup.headers.map((header) => children({ header }))}
     </tr>
   );
 }
 
-interface TableHeadProps {
+type TableHeadProps = {
   header: Header<any>;
-}
+};
 
 export function TableHead({ header }: TableHeadProps) {
   const { column } = header;
@@ -263,15 +266,17 @@ export function TableHead({ header }: TableHeadProps) {
 
   return (
     <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
-      {typeof columnDef.header === 'function' ? columnDef.header({ column }) : columnDef.header}
+      {typeof columnDef.header === "function"
+        ? columnDef.header({ column })
+        : columnDef.header}
     </th>
   );
 }
 
-interface TableColumnHeaderProps {
+type TableColumnHeaderProps = {
   column: Column<any>;
   title: string;
-}
+};
 
 export function TableColumnHeader({ column, title }: TableColumnHeaderProps) {
   if (!column.getCanSort()) {
@@ -282,32 +287,32 @@ export function TableColumnHeader({ column, title }: TableColumnHeaderProps) {
 
   return (
     <Button
-      variant="ghost"
-      size="sm"
       className="-ml-3 h-8 data-[state=open]:bg-accent"
       onClick={() => {
-        if (sorted === 'asc') {
+        if (sorted === "asc") {
           column.toggleSorting(true);
-        } else if (sorted === 'desc') {
+        } else if (sorted === "desc") {
           column.toggleSorting(false);
         } else {
           column.toggleSorting(false);
         }
       }}
+      size="sm"
+      variant="ghost"
     >
       <span>{title}</span>
-      {sorted === 'desc' ? (
+      {sorted === "desc" ? (
         <ChevronDown className="ml-2 h-4 w-4" />
-      ) : sorted === 'asc' ? (
+      ) : sorted === "asc" ? (
         <ChevronUp className="ml-2 h-4 w-4" />
       ) : null}
     </Button>
   );
 }
 
-interface TableBodyProps {
+type TableBodyProps = {
   children: (context: { row: Row<any> }) => React.ReactNode;
-}
+};
 
 export function TableBody({ children }: TableBodyProps) {
   const { getRows } = useTable();
@@ -315,29 +320,29 @@ export function TableBody({ children }: TableBodyProps) {
 
   return (
     <tbody className="[&_tr:last-child]:border-0">
-      {rows.map(row => children({ row }))}
+      {rows.map((row) => children({ row }))}
     </tbody>
   );
 }
 
-interface TableRowProps {
+type TableRowProps = {
   row: Row<any>;
   children: (context: { cell: Cell<any> }) => React.ReactNode;
-}
+};
 
 export function TableRow({ row, children }: TableRowProps) {
   const cells = row.getVisibleCells();
 
   return (
     <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-      {cells.map(cell => children({ cell }))}
+      {cells.map((cell) => children({ cell }))}
     </tr>
   );
 }
 
-interface TableCellProps {
+type TableCellProps = {
   cell: Cell<any>;
-}
+};
 
 export function TableCell({ cell }: TableCellProps) {
   const { column, row } = cell;
@@ -345,7 +350,9 @@ export function TableCell({ cell }: TableCellProps) {
 
   return (
     <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-      {typeof columnDef.cell === 'function' ? columnDef.cell({ row }) : cell.renderValue()}
+      {typeof columnDef.cell === "function"
+        ? columnDef.cell({ row })
+        : cell.renderValue()}
     </td>
   );
 }

@@ -71,6 +71,10 @@ export type KanbanTransformedData = {
  * Transform canvas data to Kanban format
  * @param canvasData - The raw canvas data
  * @returns Transformed data for Kanban component
+ *
+ * @todo This function currently returns empty data. Implementation is pending.
+ * The function should extract groupBy fields, create columns, assign colors,
+ * and transform data items to include proper column references and IDs.
  */
 export function transformToKanban(
   _canvasData: CanvasData
@@ -98,6 +102,10 @@ export type TableTransformedData<TData = any> = {
  * Transform canvas data to Table format
  * @param canvasData - The raw canvas data
  * @returns Transformed data for Table component
+ *
+ * @todo This function currently returns empty data. Implementation is pending.
+ * The function should map fieldConfig to ColumnDef format with proper
+ * accessorKeys, headers, and cell renderers based on field types.
  */
 export function transformToTable<TData = any>(
   _canvasData: CanvasData
@@ -137,6 +145,10 @@ export type GanttTransformedData = {
  * Transform canvas data to Gantt format
  * @param canvasData - The raw canvas data
  * @returns Transformed data for Gantt component
+ *
+ * @todo This function currently returns empty data. Implementation is pending.
+ * The function should extract date fields, transform to Date objects, generate IDs,
+ * and group features appropriately for the Gantt view.
  */
 export function transformToGantt(
   _canvasData: CanvasData
