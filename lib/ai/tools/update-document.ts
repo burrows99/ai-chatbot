@@ -19,7 +19,7 @@ export const updateDocument = ({ session, dataStream }: UpdateDocumentProps) =>
         .string()
         .describe("The description of changes that need to be made"),
     }),
-    execute: async ({ id, description }) => {
+    execute: async ({ id, description }, { messages }) => {
       const document = await getDocumentById({ id });
 
       if (!document) {
@@ -48,6 +48,7 @@ export const updateDocument = ({ session, dataStream }: UpdateDocumentProps) =>
         description,
         dataStream,
         session,
+        messages,
       });
 
       dataStream.write({ type: "data-finish", data: null, transient: true });

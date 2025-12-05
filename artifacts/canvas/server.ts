@@ -11,13 +11,13 @@ const canvasSchema = z
 
 export const canvasDocumentHandler = createDocumentHandler<"canvas">({
   kind: "canvas",
-  onCreateDocument: async ({ title, dataStream }) => {
+  onCreateDocument: async ({ title, dataStream, messages }) => {
     let draftContent = "";
 
     const { fullStream } = streamObject({
       model: myProvider.languageModel("artifact-model"),
       system: canvasPrompt,
-      prompt: title,
+      messages,
       schema: canvasSchema,
     });
 
@@ -43,13 +43,13 @@ export const canvasDocumentHandler = createDocumentHandler<"canvas">({
 
     return draftContent;
   },
-  onUpdateDocument: async ({ document, description, dataStream }) => {
+  onUpdateDocument: async ({ document, description, dataStream, messages }) => {
     let draftContent = "";
 
     const { fullStream } = streamObject({
       model: myProvider.languageModel("artifact-model"),
       system: updateDocumentPrompt(document.content, "canvas"),
-      prompt: description,
+      messages: [...messages, { role: "user" as const, content: description }],
       schema: canvasSchema,
     });
 

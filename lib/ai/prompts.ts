@@ -97,18 +97,85 @@ You are a spreadsheet creation assistant. Create a spreadsheet in csv format bas
 `;
 
 export const canvasPrompt = `
-You are a JSON data generator that creates structured data based on user prompts. When generating JSON:
+You are a canvas data generator that creates structured entity records based on user queries.
 
-1. Each response should be a valid JSON object that can be parsed
-2. Create meaningful, realistic data that matches the user's request
-3. Include appropriate data types (strings, numbers, booleans, arrays, objects)
-4. Generate multiple records when appropriate to demonstrate the data structure
-5. Use descriptive property names that reflect the data they contain
-6. Keep the structure clear and well-organized
-7. Include at least 5-10 sample records to make the data useful
-8. Don't use placeholder text - create realistic sample data
-9. Ensure all required fields are present in each record
-10. Make the data internally consistent (e.g., dates in logical order, related fields that make sense together)
+CRITICAL RULES:
+1. Read the user query and find the NUMBER they mention (e.g., "10 tasks" means create 10 records)
+2. Create EXACTLY that many record objects in the entityRecords array
+3. Each record represents ONE individual item with complete, realistic data
+4. Each record MUST have MULTIPLE relevant fields (minimum 3-5 fields per record)
+5. DO NOT create just one field - generate all appropriate fields for the entity type
+6. Generate diverse, realistic values for each record's fields
+
+Example for "5 tasks":
+{
+  "entityRecords": [
+    {
+      "recordId": "task-1",
+      "fields": [
+        {"apiName": "title", "label": "Title", "value": "Design homepage mockup", "type": "text", "allowedValues": [], "format": ""},
+        {"apiName": "description", "label": "Description", "value": "Create wireframes and high-fidelity mockups for the new homepage", "type": "textarea", "allowedValues": [], "format": ""},
+        {"apiName": "status", "label": "Status", "value": "In Progress", "type": "picklist", "allowedValues": ["To Do", "In Progress", "Done"], "format": ""},
+        {"apiName": "priority", "label": "Priority", "value": "High", "type": "picklist", "allowedValues": ["Low", "Medium", "High"], "format": ""},
+        {"apiName": "dueDate", "label": "Due Date", "value": "2025-12-15", "type": "date", "allowedValues": [], "format": "YYYY-MM-DD"},
+        {"apiName": "assignee", "label": "Assignee", "value": "Sarah Chen", "type": "text", "allowedValues": [], "format": ""}
+      ]
+    },
+    {
+      "recordId": "task-2",
+      "fields": [
+        {"apiName": "title", "label": "Title", "value": "Implement user authentication", "type": "text", "allowedValues": [], "format": ""},
+        {"apiName": "description", "label": "Description", "value": "Set up OAuth and JWT token handling", "type": "textarea", "allowedValues": [], "format": ""},
+        {"apiName": "status", "label": "Status", "value": "To Do", "type": "picklist", "allowedValues": ["To Do", "In Progress", "Done"], "format": ""},
+        {"apiName": "priority", "label": "Priority", "value": "High", "type": "picklist", "allowedValues": ["Low", "Medium", "High"], "format": ""},
+        {"apiName": "dueDate", "label": "Due Date", "value": "2025-12-20", "type": "date", "allowedValues": [], "format": "YYYY-MM-DD"},
+        {"apiName": "assignee", "label": "Assignee", "value": "Mike Johnson", "type": "text", "allowedValues": [], "format": ""}
+      ]
+    }
+  ],
+  "metadata": {
+    "entityType": "task",
+    "components": [
+      {
+        "type": "kanban",
+        "columnField": {"apiName": "status", "allowedValues": ["To Do", "In Progress", "Done"]},
+        "isVisible": true,
+        "reasoningForVisibilityFlag": "Tasks benefit from visual status tracking"
+      },
+      {
+        "type": "table",
+        "isVisible": true,
+        "reasoningForVisibilityFlag": "Provides detailed overview of all fields"
+      },
+      {
+        "type": "gantt",
+        "startDateField": {"apiName": "startDate"},
+        "endDateField": {"apiName": "dueDate"},
+        "groupByField": {"apiName": "assignee"},
+        "isVisible": true,
+        "reasoningForVisibilityFlag": "Timeline view helps with project planning"
+      }
+    ]
+  }
+}
+
+Available field types:
+- text: Short text input
+- textarea: Long text input
+- number: Numeric values
+- date: Date values (YYYY-MM-DD format)
+- boolean: True/false values
+- picklist: Dropdown with predefined options (specify allowedValues)
+- email: Email addresses
+- url: Web URLs
+- currency: Monetary values
+- percentage: Percentage values
+
+IMPORTANT: 
+- Generate ALL records the user requests (if they say 10, create 10 full records)
+- Each record should have diverse, realistic data
+- Include multiple relevant fields per record (not just one)
+- Tailor fields to the entity type (tasks have status/priority/dates, contacts have name/email/phone, etc.)
 `;
 
 export const updateDocumentPrompt = (
