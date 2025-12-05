@@ -39,6 +39,7 @@ import {
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
+import { getMCPTools } from "@/lib/mcp/clients";
 import type { ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
@@ -177,6 +178,9 @@ export async function POST(request: Request) {
 
     let finalMergedUsage: AppUsage | undefined;
 
+    // Load MCP tools from GitHub and Atlassian servers
+    const { tools: mcpTools, cleanup: cleanupMCP } = await getMCPTools();
+
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
         const result = streamText({
@@ -185,14 +189,15 @@ export async function POST(request: Request) {
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
-            selectedChatModel === "chat-model-reasoning"
-              ? []
-              : [
-                  "getWeather",
-                  "createDocument",
-                  "updateDocument",
-                  "requestSuggestions",
-                ],
+            // selectedChatModel === "chat-model-reasoning"
+            //   ? []
+            //   : [
+            //       "getWeather",
+            //       "createDocument",
+            //       "updateDocument",
+            //       "requestSuggestions",
+            //     ],
+              selectedChatModel === "chat-model-reasoning" ? [] : undefined, // Let AI SDK auto-detect all available tools
           experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
             getWeather,
@@ -202,12 +207,16 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            ...mcpTools,
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: "stream-text",
           },
           onFinish: async ({ usage }) => {
+            // Clean up MCP clients after streaming is done
+            await cleanupMCP();
+
             try {
               const providers = await getTokenlensCatalog();
               const modelId =

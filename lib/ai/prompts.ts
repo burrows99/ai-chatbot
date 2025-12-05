@@ -115,6 +115,7 @@ Example for "5 tasks":
     {
       "recordId": "task-1",
       "sourceSystem": "eg. github",
+      "recordURL": "https://github.com/example/repo/issues/1",
       "fields": [
         {"apiName": "title", "label": "Title", "value": "Design homepage mockup", "type": "text", "allowedValues": [], "format": ""},
         {"apiName": "description", "label": "Description", "value": "Create wireframes and high-fidelity mockups for the new homepage", "type": "textarea", "allowedValues": [], "format": ""},
@@ -127,6 +128,7 @@ Example for "5 tasks":
     {
       "recordId": "task-2",
       "sourceSystem": "eg. atlassian",
+      "recordURL": "https://atlassian.com/example/project/tasks/2",
       "fields": [
         {"apiName": "title", "label": "Title", "value": "Implement user authentication", "type": "text", "allowedValues": [], "format": ""},
         {"apiName": "description", "label": "Description", "value": "Set up OAuth and JWT token handling", "type": "textarea", "allowedValues": [], "format": ""},
@@ -208,8 +210,50 @@ CRITICAL RULES FOR UPDATES:
    - Match the field structure and types of existing records
    - Ensure consistency with existing data patterns
 5. When modifying items: Update the specific field values in the matching record
-6. Maintain the same field structure for all records
-7. Keep metadata.components configuration intact unless specifically asked to change it
+6. When modifying metadata: Update the metadata object with new configuration
+   - Add/remove/modify components array entries
+   - Update isVisible flags for components
+   - Modify columnField, startDateField, endDateField, groupByField as needed
+   - Keep entityType consistent unless explicitly asked to change
+7. Maintain the same field structure for all records
+8. Keep metadata.components configuration intact UNLESS specifically asked to change views/visualization
+
+METADATA STRUCTURE:
+The metadata object controls which views are available and how they're configured:
+{
+  "metadata": {
+    "entityType": "task|contact|project|issue|...",
+    "components": [
+      {
+        "type": "kanban",
+        "columnField": {"apiName": "status", "allowedValues": ["To Do", "In Progress", "Done"]},
+        "isVisible": true,
+        "reasoningForVisibilityFlag": "Explain why this view is useful"
+      },
+      {
+        "type": "table",
+        "isVisible": true,
+        "reasoningForVisibilityFlag": "Explain why table view is useful"
+      },
+      {
+        "type": "gantt",
+        "startDateField": {"apiName": "startDate"},
+        "endDateField": {"apiName": "dueDate"},
+        "groupByField": {"apiName": "assignee"},
+        "isVisible": true,
+        "reasoningForVisibilityFlag": "Explain why timeline view is useful"
+      }
+    ]
+  }
+}
+
+UPDATING METADATA:
+- If user requests to "hide kanban view": Set kanban component's isVisible to false
+- If user requests to "show only table view": Set isVisible: true for table, false for others
+- If user requests to "change status columns": Update columnField.allowedValues in kanban component
+- If user requests to "group by project": Update groupByField.apiName in gantt component
+- If user requests to "add gantt view": Add new gantt component with required fields
+- If user requests to "remove table view": Remove table component from components array
 
 FIELD COMPLETION REQUIREMENTS:
 - Text fields: Generate relevant, descriptive values
@@ -222,7 +266,7 @@ FIELD COMPLETION REQUIREMENTS:
 Current canvas data:
 ${currentContent}
 
-Based on the user's request, output the COMPLETE updated JSON structure with all records fully populated.`;
+Based on the user's request, output the COMPLETE updated JSON structure with all records fully populated and metadata properly configured.`;
   }
 
   return `Improve the following contents of the ${mediaType} based on the given prompt.

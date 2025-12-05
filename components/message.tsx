@@ -265,8 +265,8 @@ const PurePreviewMessage = ({
             }
 
             // Catch-all for any other tool calls
-            if (type.startsWith("tool-")) {
-              const { toolCallId, state } = part as any;
+            if (type.includes("tool")) {
+              const { toolCallId, state, toolName } = part as any;
               const toolPart = part as any;
 
               // Helper function to recursively parse JSON strings
@@ -303,7 +303,7 @@ const PurePreviewMessage = ({
 
               return (
                 <Tool defaultOpen={true} key={toolCallId}>
-                  <ToolHeader state={state} type={type as any} />
+                  <ToolHeader state={state} type={toolName || (type as any)} />
                   <ToolContent>
                     {parsedInput && (
                       <JsonViewer
