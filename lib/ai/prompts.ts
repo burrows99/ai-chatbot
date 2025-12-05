@@ -189,7 +189,34 @@ export const updateDocumentPrompt = (
   } else if (type === "sheet") {
     mediaType = "spreadsheet";
   } else if (type === "canvas") {
-    mediaType = "canvas visualization";
+    return `You are updating a canvas visualization. You MUST return ONLY valid JSON in the exact same structure.
+
+CRITICAL RULES FOR UPDATES:
+1. ALWAYS output the complete JSON structure with entityRecords array and metadata object
+2. NEVER respond with plain text or descriptions - ONLY return the JSON structure
+3. When removing items: Remove the specific record from the entityRecords array
+4. When adding items: 
+   - Add new records to the entityRecords array
+   - MUST populate ALL fields with realistic, meaningful values
+   - NEVER leave fields empty - generate appropriate data for each field
+   - Match the field structure and types of existing records
+   - Ensure consistency with existing data patterns
+5. When modifying items: Update the specific field values in the matching record
+6. Maintain the same field structure for all records
+7. Keep metadata.components configuration intact unless specifically asked to change it
+
+FIELD COMPLETION REQUIREMENTS:
+- Text fields: Generate relevant, descriptive values
+- Date fields: Use realistic dates in YYYY-MM-DD format
+- Picklist fields: Choose from allowedValues, don't leave empty
+- Assignee fields: Provide realistic names
+- Description fields: Write meaningful, contextual descriptions
+- All fields must have appropriate non-empty values
+
+Current canvas data:
+${currentContent}
+
+Based on the user's request, output the COMPLETE updated JSON structure with all records fully populated.`;
   }
 
   return `Improve the following contents of the ${mediaType} based on the given prompt.
