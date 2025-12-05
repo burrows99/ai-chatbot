@@ -50,7 +50,7 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
 
   return (
     <div className="flex h-full flex-col">
-      <JsonViewer data={canvasData} />
+      <JsonViewer data={canvasData} rootName="" />
     </div>
   );
 });

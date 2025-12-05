@@ -97,18 +97,18 @@ You are a spreadsheet creation assistant. Create a spreadsheet in csv format bas
 `;
 
 export const canvasPrompt = `
-You are a canvas visualization assistant. Create a canvas configuration with data visualizations based on the given prompt.
+You are a JSON data generator that creates structured data based on user prompts. When generating JSON:
 
-The canvas should include:
-1. fieldConfig: Define the data structure with fields (apiname, label, type, allowedvalues if select, defaultvalue)
-   - Field types: "number", "text", "id", "textarea", "date", "select", "checkbox"
-2. data: Provide sample data records that match the fieldConfig
-3. layout: Configure which views are visible (kanban, table, gantt) and their positions
-   - Positions: "left", "right", "top", "bottom"
-   - For kanban: include groupBy field (should be a select or text field)
-   - For gantt: include startDateField and endDateField (should be date fields)
-
-Create meaningful, realistic data that demonstrates the visualization effectively.
+1. Each response should be a valid JSON object that can be parsed
+2. Create meaningful, realistic data that matches the user's request
+3. Include appropriate data types (strings, numbers, booleans, arrays, objects)
+4. Generate multiple records when appropriate to demonstrate the data structure
+5. Use descriptive property names that reflect the data they contain
+6. Keep the structure clear and well-organized
+7. Include at least 5-10 sample records to make the data useful
+8. Don't use placeholder text - create realistic sample data
+9. Ensure all required fields are present in each record
+10. Make the data internally consistent (e.g., dates in logical order, related fields that make sense together)
 `;
 
 export const updateDocumentPrompt = (
