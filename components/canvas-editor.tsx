@@ -1,16 +1,27 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
+import { useCanvas } from "@/artifacts/canvas/context";
 import { DataTableView } from "@/components/canvas/data-table-view";
 import type { GanttTransformedData } from "@/components/canvas/gantt-view";
 import GanttView from "@/components/canvas/gantt-view";
 import type { KanbanTransformedData } from "@/components/canvas/kanban-view";
 import KanbanView from "@/components/canvas/kanban-view";
+import { InfoIcon } from "@/components/icons";
 import { JsonViewer } from "@/components/json-viewer";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   type TableTransformedData,
@@ -21,7 +32,6 @@ import {
 import type { CanvasData } from "@/lib/artifacts/canvas/types";
 
 type CanvasEditorProps = {
-  content: string;
   currentVersionIndex: number;
   isCurrentVersion: boolean;
   saveContent: (content: string, debounce: boolean) => void;
@@ -29,22 +39,50 @@ type CanvasEditorProps = {
 };
 
 export const CanvasEditor = memo(function CanvasEditorComponent({
-  content,
   currentVersionIndex: _currentVersionIndex,
   isCurrentVersion: _isCurrentVersion,
   saveContent: _saveContent,
   status: _status,
 }: CanvasEditorProps) {
   const [activeTab, setActiveTab] = useState<"canvas" | "json">("canvas");
+  const { entityRecords, metadata, updateEntityRecords, updateMetadata } =
+    useCanvas();
+
+  const handleEntityRecordsChange = useCallback((update: { path: (string | number)[]; value: any }) => {
+    const newRecords = structuredClone(entityRecords);
+    let current = newRecords;
+    
+    for (let i = 0; i < update.path.length - 1; i++) {
+      current = current[update.path[i]];
+    }
+    
+    current[update.path[update.path.length - 1]] = update.value;
+    updateEntityRecords(newRecords);
+  }, [entityRecords, updateEntityRecords]);
+
+  const handleMetadataChange = useCallback((update: { path: (string | number)[]; value: any }) => {
+    if (!metadata) return;
+    
+    const newMetadata = structuredClone(metadata);
+    let current = newMetadata;
+    
+    for (let i = 0; i < update.path.length - 1; i++) {
+      current = current[update.path[i]];
+    }
+    
+    current[update.path[update.path.length - 1]] = update.value;
+    updateMetadata(newMetadata);
+  }, [metadata, updateMetadata]);
 
   const canvasData = useMemo<CanvasData | null>(() => {
-    try {
-      const parsed = JSON.parse(content);
-      return parsed;
-    } catch {
+    if (!entityRecords || !metadata) {
       return null;
     }
-  }, [content]);
+    return {
+      entityRecords,
+      metadata,
+    };
+  }, [entityRecords, metadata]);
 
   const tableData = useMemo<TableTransformedData | null>(() => {
     if (
@@ -147,10 +185,50 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
         onValueChange={(v: string) => setActiveTab(v as "canvas" | "json")}
         value={activeTab}
       >
-        <TabsList className="mx-4 mt-4 w-fit">
-          <TabsTrigger value="canvas">Canvas</TabsTrigger>
-          <TabsTrigger value="json">JSON</TabsTrigger>
-        </TabsList>
+        <div className="mx-4 mt-4 flex items-center gap-2">
+          <TabsList className="w-fit">
+            <TabsTrigger value="canvas">Canvas</TabsTrigger>
+            <TabsTrigger value="json">JSON</TabsTrigger>
+          </TabsList>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="icon" variant="outline">
+                <InfoIcon size={16} />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Canvas Provider State</DialogTitle>
+                <DialogDescription>
+                  Current state of entity records and metadata
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="mb-2 font-semibold">
+                    Entity Records ({entityRecords.length})
+                  </h3>
+                  <JsonViewer
+                    data={entityRecords}
+                    isEditable={true}
+                    onChange={handleEntityRecordsChange}
+                    rootName="entityRecords"
+                  />
+                </div>
+                <div>
+                  <h3 className="mb-2 font-semibold">Metadata</h3>
+                  <JsonViewer
+                    data={metadata}
+                    isEditable={true}
+                    onChange={handleMetadataChange}
+                    rootName="metadata"
+                  />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         <TabsContent className="mt-0 flex-1 overflow-auto p-4" value="canvas">
           {!tableData && !kanbanData && !ganttData ? (
