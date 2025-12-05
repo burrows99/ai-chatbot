@@ -15,9 +15,16 @@ import {
 import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
 // biome-ignore lint/performance/noNamespaceImport: React namespace import required for hooks and memo
 import * as React from "react";
-
+import { JsonViewer } from "@/components/json-viewer";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -37,143 +44,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// const data: Payment[] = [
-//   {
-//     id: "m5gr84i9",
-//     amount: 316,
-//     status: "success",
-//     email: "ken99@example.com",
-//   },
-//   {
-//     id: "3u1reuv4",
-//     amount: 242,
-//     status: "success",
-//     email: "Abe45@example.com",
-//   },
-//   {
-//     id: "derv1ws0",
-//     amount: 837,
-//     status: "processing",
-//     email: "Monserrat44@example.com",
-//   },
-//   {
-//     id: "5kma53ae",
-//     amount: 874,
-//     status: "success",
-//     email: "Silas22@example.com",
-//   },
-//   {
-//     id: "bhqecj4p",
-//     amount: 721,
-//     status: "failed",
-//     email: "carmella@example.com",
-//   },
-// ];
+export type TableRowData = Record<string, string> & {
+  viewDetails?: Record<string, unknown> | null;
+};
 
-// export type Payment = {
-//   id: string;
-//   amount: number;
-//   status: "pending" | "processing" | "success" | "failed";
-//   email: string;
-// };
-
-// export const columns: ColumnDef<Payment>[] = [
-//   {
-//     id: "select",
-//     header: ({ table }) => (
-//       <Checkbox
-//         aria-label="Select all"
-//         checked={
-//           table.getIsAllPageRowsSelected() ||
-//           (table.getIsSomePageRowsSelected() && "indeterminate")
-//         }
-//         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-//       />
-//     ),
-//     cell: ({ row }) => (
-//       <Checkbox
-//         aria-label="Select row"
-//         checked={row.getIsSelected()}
-//         onCheckedChange={(value) => row.toggleSelected(!!value)}
-//       />
-//     ),
-//     enableSorting: false,
-//     enableHiding: false,
-//   },
-//   {
-//     accessorKey: "status",
-//     header: "Status",
-//     cell: ({ row }) => (
-//       <div className="capitalize">{row.getValue("status")}</div>
-//     ),
-//   },
-//   {
-//     accessorKey: "email",
-//     header: ({ column }) => {
-//       return (
-//         <Button
-//           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-//           variant="ghost"
-//         >
-//           Email
-//           <ArrowUpDown />
-//         </Button>
-//       );
-//     },
-//     cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
-//   },
-//   {
-//     accessorKey: "amount",
-//     header: () => <div className="text-right">Amount</div>,
-//     cell: ({ row }) => {
-//       const amount = Number.parseFloat(row.getValue("amount"));
-
-//       // Format the amount as a dollar amount
-//       const formatted = new Intl.NumberFormat("en-US", {
-//         style: "currency",
-//         currency: "USD",
-//       }).format(amount);
-
-//       return <div className="text-right font-medium">{formatted}</div>;
-//     },
-//   },
-//   {
-//     id: "actions",
-//     enableHiding: false,
-//     cell: ({ row }) => {
-//       const payment = row.original;
-
-//       return (
-//         <DropdownMenu>
-//           <DropdownMenuTrigger asChild>
-//             <Button className="h-8 w-8 p-0" variant="ghost">
-//               <span className="sr-only">Open menu</span>
-//               <MoreHorizontal />
-//             </Button>
-//           </DropdownMenuTrigger>
-//           <DropdownMenuContent align="end">
-//             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-//             <DropdownMenuItem
-//               onClick={() => navigator.clipboard.writeText(payment.id)}
-//             >
-//               Copy payment ID
-//             </DropdownMenuItem>
-//             <DropdownMenuSeparator />
-//             <DropdownMenuItem>View customer</DropdownMenuItem>
-//             <DropdownMenuItem>View payment details</DropdownMenuItem>
-//           </DropdownMenuContent>
-//         </DropdownMenu>
-//       );
-//     },
-//   },
-// ];
+export type TableTransformedData = {
+  columns: ColumnDef<TableRowData, string>[];
+  data: TableRowData[];
+};
 
 type DataTableDemoProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 };
 
-export function DataTableView<TData, TValue>({
+export function DataTableView<TData extends TableRowData, TValue>({
   columns: baseColumns,
   data,
 }: DataTableDemoProps<TData, TValue>) {
@@ -184,6 +69,11 @@ export function DataTableView<TData, TValue>({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [selectedRowDetails, setSelectedRowDetails] = React.useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   // Enhance columns with select, sorting, and actions
   const columns = React.useMemo<ColumnDef<TData, TValue>[]>(() => {
@@ -246,7 +136,7 @@ export function DataTableView<TData, TValue>({
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
-        const record = row.original as any;
+        const record = row.original as TableRowData;
 
         return (
           <DropdownMenu>
@@ -266,7 +156,17 @@ export function DataTableView<TData, TValue>({
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem>View details</DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!record.viewDetails}
+                onClick={() => {
+                  if (record.viewDetails) {
+                    setSelectedRowDetails(record.viewDetails);
+                    setIsDialogOpen(true);
+                  }
+                }}
+              >
+                View details
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -414,6 +314,22 @@ export function DataTableView<TData, TValue>({
           </Button>
         </div>
       </div>
+
+      <Dialog onOpenChange={setIsDialogOpen} open={isDialogOpen}>
+        <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Row Details</DialogTitle>
+            <DialogDescription>
+              Detailed information from the tool result for this record.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRowDetails && (
+            <div className="mt-4">
+              <JsonViewer data={selectedRowDetails} defaultExpanded={true} rootName="" />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

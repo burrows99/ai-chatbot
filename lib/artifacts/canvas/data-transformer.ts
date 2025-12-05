@@ -1,4 +1,7 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import type {
+  TableRowData,
+  TableTransformedData,
+} from "@/components/canvas/data-table-view";
 import type {
   GanttFeature,
   GanttGroup,
@@ -17,11 +20,6 @@ import type {
   GanttComponent,
   KanbanComponent,
 } from "./types";
-
-export type TableTransformedData = {
-  columns: ColumnDef<Record<string, string>, string>[];
-  data: Record<string, string>[];
-};
 
 const COLUMN_COLORS = [
   "#6B7280", // Gray
@@ -115,25 +113,26 @@ export function transformToTableData(data: CanvasData): TableTransformedData {
   }
 
   // Create columns from unique fields
-  const columns: ColumnDef<Record<string, string>, string>[] = Array.from(
-    fieldSet
-  ).map((apiName) => ({
+  const columns = Array.from(fieldSet).map((apiName) => ({
     accessorKey: apiName,
     header: fieldLabels.get(apiName) || apiName,
   }));
 
   // Transform entity records into table rows
-  const tableData: Record<string, string>[] = data.entityRecords.map(
-    (record) => {
-      const row: Record<string, string> = {};
+  const tableData: TableRowData[] = data.entityRecords.map((record) => {
+    const row: TableRowData = {};
 
-      for (const field of record.fields) {
-        row[field.apiName] = field.value || "";
-      }
-
-      return row;
+    for (const field of record.fields) {
+      row[field.apiName] = field.value || "";
     }
-  );
+
+    // Add toolCallResult as viewDetails if available
+    if (record.toolCallResult) {
+      row.viewDetails = record.toolCallResult;
+    }
+
+    return row;
+  });
 
   return {
     columns,

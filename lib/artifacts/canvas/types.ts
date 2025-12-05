@@ -10,6 +10,9 @@ export type EntityField = {
 export type EntityRecord = {
   recordId: string;
   fields: EntityField[];
+  sourceSystem: string;
+  recordURL: string | null;
+  toolCallResult: Record<string, unknown> | null;
 };
 
 export type KanbanComponent = {

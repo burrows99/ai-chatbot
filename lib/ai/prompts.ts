@@ -113,9 +113,10 @@ Example for "5 tasks":
 {
   "entityRecords": [
     {
-      "recordId": "task-1",
+      "recordId": "recordID-2-1",
       "sourceSystem": "eg. github",
-      "recordURL": "https://github.com/example/repo/issues/1",
+      "recordURL": "actual url of the entity that this record represents, or null if not available",
+      "toolCallResult": "exact subset of the tool response object containing information about this record, if created via tool call, otherwise null. Ensure no key, value is left out from the corresponding tool response object.",
       "fields": [
         {"apiName": "title", "label": "Title", "value": "Design homepage mockup", "type": "text", "allowedValues": [], "format": ""},
         {"apiName": "description", "label": "Description", "value": "Create wireframes and high-fidelity mockups for the new homepage", "type": "textarea", "allowedValues": [], "format": ""},
@@ -126,9 +127,10 @@ Example for "5 tasks":
       ]
     },
     {
-      "recordId": "task-2",
+      "recordURL": "actual url of the entity that this record represents, or null if not available",
       "sourceSystem": "eg. atlassian",
       "recordURL": "https://atlassian.com/example/project/tasks/2",
+      "toolCallResult": "exact subset of the tool response object containing information about this record, if created via tool call, otherwise null. Ensure no key, value is left out from the corresponding tool response object.",
       "fields": [
         {"apiName": "title", "label": "Title", "value": "Implement user authentication", "type": "text", "allowedValues": [], "format": ""},
         {"apiName": "description", "label": "Description", "value": "Set up OAuth and JWT token handling", "type": "textarea", "allowedValues": [], "format": ""},
@@ -140,7 +142,7 @@ Example for "5 tasks":
     }
   ],
   "metadata": {
-    "entityType": "task",
+    "entityType": "the standard entity type of our records",
     "components": [
       {
         "type": "kanban",
@@ -188,6 +190,13 @@ Available field types:
 IMPORTANT: 
 - Generate ALL records the user requests (if they say 10, create 10 full records)
 - Each record MUST have a "sourceSystem" property with a realistic system name (github, atlassian, salesforce, linear, slack, etc.)
+- Each record MUST have a "recordURL" property with actual URL if available, otherwise set to null
+- Each record MUST have a "toolCallResult" property:
+  * Look at the conversation history for any MCP tool calls that were executed
+  * If this specific record came from a tool call result, capture the COMPLETE tool response exactly as returned
+  * The tool result can be any JSON structure - do not modify or restructure it
+  * If this record was generated without a tool call, set toolCallResult to null
+  * The toolCallResult preserves the original tool response for reference and debugging
 - Each record should have diverse, realistic data
 - Include multiple relevant fields per record (not just one)
 - Tailor fields to the entity type (tasks have status/priority/dates, contacts have name/email/phone, etc.)

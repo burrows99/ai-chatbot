@@ -1,10 +1,17 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { useCanvas } from "@/artifacts/canvas/context";
-import { DataTableView } from "@/components/canvas/data-table-view";
-import type { GanttTransformedData } from "@/components/canvas/gantt-view";
-import GanttView from "@/components/canvas/gantt-view";
-import type { KanbanTransformedData } from "@/components/canvas/kanban-view";
-import KanbanView from "@/components/canvas/kanban-view";
+import {
+  DataTableView,
+  type TableTransformedData,
+} from "@/components/canvas/data-table-view";
+import {
+  type GanttTransformedData,
+  default as GanttView,
+} from "@/components/canvas/gantt-view";
+import {
+  type KanbanTransformedData,
+  default as KanbanView,
+} from "@/components/canvas/kanban-view";
 import { InfoIcon } from "@/components/icons";
 import { JsonViewer } from "@/components/json-viewer";
 import { Button } from "@/components/ui/button";
@@ -24,7 +31,6 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  type TableTransformedData,
   transformToGanttData,
   transformToKanbanData,
   transformToTableData,

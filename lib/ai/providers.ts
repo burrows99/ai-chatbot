@@ -1,3 +1,4 @@
+import { createOllama } from "ollama-ai-provider-v2";
 import { createAzure } from "@ai-sdk/azure";
 import {
   customProvider,
@@ -48,6 +49,27 @@ const azureProvider = customProvider({
   },
 });
 
-export const myProvider = isTestEnvironment ? providerForTest : azureProvider;
+const ollama = createOllama({
+  baseURL: process.env.OLLAMA_BASE_URL,
+});
 
-export const allProviders = [azureProvider];
+const ollamaProvider = customProvider({
+  languageModels: {
+    "chat-model": ollama(String(process.env.OLLAMA_MODEL)),
+    "chat-model-reasoning": wrapLanguageModel({
+      model: ollama(String(process.env.OLLAMA_MODEL)),
+      middleware: extractReasoningMiddleware({ tagName: "reasoning" }),
+    }),
+    "title-model": ollama(String(process.env.OLLAMA_MODEL)),
+    "artifact-model": ollama(String(process.env.OLLAMA_MODEL)),
+  },
+  imageModels: {
+    // 'small-model': openai.image('gpt-image-1'),
+  },
+});
+
+export const myProvider = isTestEnvironment ? providerForTest : 
+azureProvider;
+// ollamaProvider;
+
+export const allProviders = [azureProvider, ollamaProvider];
