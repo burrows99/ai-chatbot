@@ -36,6 +36,7 @@ type CanvasEditorProps = {
   isCurrentVersion: boolean;
   saveContent: (content: string, debounce: boolean) => void;
   status: "idle" | "streaming";
+  content: string;
 };
 
 export const CanvasEditor = memo(function CanvasEditorComponent({
@@ -43,10 +44,20 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
   isCurrentVersion: _isCurrentVersion,
   saveContent: _saveContent,
   status: _status,
+  content,
 }: CanvasEditorProps) {
   const [activeTab, setActiveTab] = useState<"canvas" | "json">("canvas");
   const { entityRecords, metadata, updateEntityRecords, updateMetadata } =
     useCanvas();
+
+  const contentData = useMemo(() => {
+    if (!content || content.trim() === "") return null;
+    try {
+      return JSON.parse(content);
+    } catch {
+      return null;
+    }
+  }, [content]);
 
   const handleEntityRecordsChange = useCallback((update: { path: (string | number)[]; value: any }) => {
     const newRecords = structuredClone(entityRecords);
@@ -61,7 +72,9 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
   }, [entityRecords, updateEntityRecords]);
 
   const handleMetadataChange = useCallback((update: { path: (string | number)[]; value: any }) => {
-    if (!metadata) return;
+    if (!metadata) { 
+      return;
+    }
     
     const newMetadata = structuredClone(metadata);
     let current = newMetadata;
@@ -162,22 +175,6 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
     }
   }, [canvasData]);
 
-  if (!canvasData) {
-    return (
-      <div className="flex h-full items-center justify-center p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Invalid Canvas Data</CardTitle>
-            <CardDescription>
-              Unable to parse canvas configuration. Please check the JSON
-              structure.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-full flex-col">
       <Tabs
@@ -271,8 +268,11 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
           )}
         </TabsContent>
 
-        <TabsContent className="mt-0 flex-1 overflow-auto" value="json">
-          <JsonViewer data={canvasData} rootName="" />
+        <TabsContent className="mt-0 flex-1 overflow-auto p-4" value="json">
+          <CardDescription className="mb-4">
+            Displaying document content (persisted data)
+          </CardDescription>
+          <JsonViewer data={contentData} rootName="" />
         </TabsContent>
       </Tabs>
     </div>

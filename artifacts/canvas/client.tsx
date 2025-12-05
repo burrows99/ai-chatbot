@@ -47,6 +47,7 @@ function CanvasArtifactContent({
   return (
     <div className="flex h-full flex-col">
       <CanvasEditor
+        content={content}
         currentVersionIndex={currentVersionIndex}
         isCurrentVersion={isCurrentVersion}
         saveContent={onSaveContent}
