@@ -11,18 +11,18 @@ import {
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type JsonViewerProps = {
@@ -318,9 +318,13 @@ function JsonValue({
         );
       }
       return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: Inline span needed for JSON display
+        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: Inline span needed for JSON display
         <span
           className={cn("text-emerald-500", isEditable && "cursor-pointer")}
           onDoubleClick={isEditable ? handleEdit : undefined}
+          role={isEditable ? "button" : undefined}
+          tabIndex={isEditable ? 0 : undefined}
         >
           {`"${data}"`}
         </span>
@@ -340,9 +344,13 @@ function JsonValue({
         );
       }
       return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: Inline span needed for JSON display
+        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: Inline span needed for JSON display
         <span
           className="cursor-pointer text-amber-500"
           onDoubleClick={isEditable ? handleEdit : undefined}
+          role={isEditable ? "button" : undefined}
+          tabIndex={isEditable ? 0 : undefined}
         >
           {data}
         </span>
@@ -368,9 +376,13 @@ function JsonValue({
         );
       }
       return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: Inline span needed for JSON display
+        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: Inline span needed for JSON display
         <span
           className="cursor-pointer text-blue-500"
           onDoubleClick={isEditable ? handleEdit : undefined}
+          role={isEditable ? "button" : undefined}
+          tabIndex={isEditable ? 0 : undefined}
         >
           {data.toString()}
         </span>

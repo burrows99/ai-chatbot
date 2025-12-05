@@ -51,7 +51,9 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
     useCanvas();
 
   const contentData = useMemo(() => {
-    if (!content || content.trim() === "") return null;
+    if (!content || content.trim() === "") {
+      return null;
+    }
     try {
       return JSON.parse(content);
     } catch {
@@ -59,33 +61,39 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
     }
   }, [content]);
 
-  const handleEntityRecordsChange = useCallback((update: { path: (string | number)[]; value: any }) => {
-    const newRecords = structuredClone(entityRecords);
-    let current = newRecords;
-    
-    for (let i = 0; i < update.path.length - 1; i++) {
-      current = current[update.path[i]];
-    }
-    
-    current[update.path[update.path.length - 1]] = update.value;
-    updateEntityRecords(newRecords);
-  }, [entityRecords, updateEntityRecords]);
+  const handleEntityRecordsChange = useCallback(
+    (update: { path: (string | number)[]; value: any }) => {
+      const newRecords = structuredClone(entityRecords);
+      let current = newRecords;
 
-  const handleMetadataChange = useCallback((update: { path: (string | number)[]; value: any }) => {
-    if (!metadata) { 
-      return;
-    }
-    
-    const newMetadata = structuredClone(metadata);
-    let current = newMetadata;
-    
-    for (let i = 0; i < update.path.length - 1; i++) {
-      current = current[update.path[i]];
-    }
-    
-    current[update.path[update.path.length - 1]] = update.value;
-    updateMetadata(newMetadata);
-  }, [metadata, updateMetadata]);
+      for (let i = 0; i < update.path.length - 1; i++) {
+        current = current[update.path[i]];
+      }
+
+      current[update.path.at(-1)] = update.value;
+      updateEntityRecords(newRecords);
+    },
+    [entityRecords, updateEntityRecords]
+  );
+
+  const handleMetadataChange = useCallback(
+    (update: { path: (string | number)[]; value: any }) => {
+      if (!metadata) {
+        return;
+      }
+
+      const newMetadata = structuredClone(metadata);
+      let current = newMetadata;
+
+      for (let i = 0; i < update.path.length - 1; i++) {
+        current = current[update.path[i]];
+      }
+
+      current[update.path.at(-1)] = update.value;
+      updateMetadata(newMetadata);
+    },
+    [metadata, updateMetadata]
+  );
 
   const canvasData = useMemo<CanvasData | null>(() => {
     if (!entityRecords || !metadata) {
