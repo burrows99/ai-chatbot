@@ -18,6 +18,7 @@ import {
   ToolOutput,
 } from "./elements/tool";
 import { SparklesIcon } from "./icons";
+import { JsonViewer } from "./json-viewer";
 import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
 import { MessageReasoning } from "./message-reasoning";
@@ -256,6 +257,68 @@ const PurePreviewMessage = ({
                             />
                           )
                         }
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
+            // Catch-all for any other tool calls
+            if (type.startsWith("tool-")) {
+              const { toolCallId, state } = part as any;
+              const toolPart = part as any;
+
+              // Helper function to recursively parse JSON strings
+              const parseJsonRecursively = (value: any): any => {
+                if (typeof value === "string") {
+                  try {
+                    const parsed = JSON.parse(value);
+                    return parseJsonRecursively(parsed);
+                  } catch {
+                    return value;
+                  }
+                }
+                if (Array.isArray(value)) {
+                  return value.map(parseJsonRecursively);
+                }
+                if (value && typeof value === "object") {
+                  const result: Record<string, any> = {};
+                  for (const k in value) {
+                    if (Object.hasOwn(value, k)) {
+                      result[k] = parseJsonRecursively(value[k]);
+                    }
+                  }
+                  return result;
+                }
+                return value;
+              };
+
+              const parsedInput = toolPart.input
+                ? parseJsonRecursively(toolPart.input)
+                : null;
+              const parsedOutput = toolPart.output
+                ? parseJsonRecursively(toolPart.output)
+                : null;
+
+              return (
+                <Tool defaultOpen={true} key={toolCallId}>
+                  <ToolHeader state={state} type={type as any} />
+                  <ToolContent>
+                    {parsedInput && (
+                      <JsonViewer
+                        className="rounded-lg border bg-muted/50 p-3"
+                        data={parsedInput}
+                        defaultExpanded={false}
+                        rootName="input"
+                      />
+                    )}
+                    {state === "output-available" && parsedOutput && (
+                      <JsonViewer
+                        className="rounded-lg border bg-muted/50 p-3"
+                        data={parsedOutput}
+                        defaultExpanded={false}
+                        rootName="output"
                       />
                     )}
                   </ToolContent>

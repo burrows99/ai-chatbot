@@ -1,11 +1,8 @@
-import { useState } from "react";
 import { toast } from "sonner";
 import { CanvasEditor } from "@/components/canvas-editor";
-import { CanvasJsonView } from "@/components/canvas-json-view";
 import { Artifact } from "@/components/create-artifact";
 import { DocumentSkeleton } from "@/components/document-skeleton";
 import { CopyIcon, RedoIcon, UndoIcon } from "@/components/icons";
-import { Button } from "@/components/ui/button";
 
 type Metadata = {
   viewMode: "canvas" | "json";
@@ -26,36 +23,19 @@ function CanvasArtifactContent({
   isLoading: boolean;
   isCurrentVersion: boolean;
 }) {
-  const [viewMode, setViewMode] = useState<"canvas" | "json">("canvas");
-
   if (isLoading) {
     return <DocumentSkeleton artifactKind="canvas" />;
   }
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-end gap-2 border-b p-2">
-        <Button
-          onClick={() => setViewMode(viewMode === "canvas" ? "json" : "canvas")}
-          size="sm"
-          variant="outline"
-        >
-          {viewMode === "canvas" ? "View JSON" : "View Canvas"}
-        </Button>
-      </div>
-      <div className="flex-1 overflow-hidden">
-        {viewMode === "json" ? (
-          <CanvasJsonView content={content} />
-        ) : (
-          <CanvasEditor
-            content={content}
-            currentVersionIndex={currentVersionIndex}
-            isCurrentVersion={isCurrentVersion}
-            saveContent={onSaveContent}
-            status={status}
-          />
-        )}
-      </div>
+      <CanvasEditor
+        content={content}
+        currentVersionIndex={currentVersionIndex}
+        isCurrentVersion={isCurrentVersion}
+        saveContent={onSaveContent}
+        status={status}
+      />
     </div>
   );
 }

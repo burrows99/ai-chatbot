@@ -4,45 +4,10 @@ import { canvasPrompt, updateDocumentPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
 import { createDocumentHandler } from "@/lib/artifacts/server";
 
-const fieldConfigSchema = z.object({
-  apiname: z.string(),
-  label: z.string(),
-  allowedvalues: z.array(z.string()).optional(),
-  defaultvalue: z.any().optional(),
-  type: z.enum([
-    "number",
-    "text",
-    "id",
-    "textarea",
-    "date",
-    "select",
-    "checkbox",
-  ]),
-});
-
-const layoutSchema = z.object({
-  kanban: z.object({
-    visible: z.boolean(),
-    position: z.enum(["left", "right", "top", "bottom"]),
-    groupBy: z.string().optional(),
-  }),
-  table: z.object({
-    visible: z.boolean(),
-    position: z.enum(["left", "right", "top", "bottom"]),
-  }),
-  gantt: z.object({
-    visible: z.boolean(),
-    position: z.enum(["left", "right", "top", "bottom"]),
-    startDateField: z.string().optional(),
-    endDateField: z.string().optional(),
-  }),
-});
-
-const canvasSchema = z.object({
-  fieldConfig: z.array(fieldConfigSchema),
-  data: z.array(z.record(z.any())),
-  layout: layoutSchema,
-});
+const canvasSchema = z
+  .object({})
+  .passthrough()
+  .describe("Canvas data - accepts any JSON structure");
 
 export const canvasDocumentHandler = createDocumentHandler<"canvas">({
   kind: "canvas",
