@@ -140,12 +140,12 @@ Example for "5 tasks":
         "type": "kanban",
         "columnField": {"apiName": "status", "allowedValues": ["To Do", "In Progress", "Done"]},
         "isVisible": true,
-        "reasoningForVisibilityFlag": "Tasks benefit from visual status tracking"
+        "reasoningForVisibilityFlag": "Does this data have workflow stages that benefit from visual tracking?"
       },
       {
         "type": "table",
         "isVisible": true,
-        "reasoningForVisibilityFlag": "Provides detailed overview of all fields"
+        "reasoningForVisibilityFlag": "Does this data need to show all fields in a detailed, sortable format?"
       },
       {
         "type": "gantt",
@@ -153,7 +153,7 @@ Example for "5 tasks":
         "endDateField": {"apiName": "dueDate"},
         "groupByField": {"apiName": "assignee"},
         "isVisible": true,
-        "reasoningForVisibilityFlag": "Timeline view helps with project planning"
+        "reasoningForVisibilityFlag": "Does this data have time-based relationships that benefit from timeline visualization?"
       }
     ]
   }

@@ -11,7 +11,7 @@ const canvasSchema = z
 
 export const canvasDocumentHandler = createDocumentHandler<"canvas">({
   kind: "canvas",
-  onCreateDocument: async ({ title, dataStream, messages }) => {
+  onCreateDocument: async ({ dataStream, messages }) => {
     let draftContent = "";
 
     const { fullStream } = streamObject({
