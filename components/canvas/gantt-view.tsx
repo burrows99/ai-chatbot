@@ -22,7 +22,7 @@ import {
   GanttTimeline,
   GanttToday,
 } from "@/components/ui/shadcn-io/gantt";
-import type { GanttTransformedData } from "@/lib/canvas-transformers";
+import type { GanttTransformedData } from "@/lib/types";
 
 type CanvasGanttViewProps = {
   transformedData: GanttTransformedData;

@@ -9,7 +9,7 @@ import {
   KanbanHeader,
   KanbanProvider,
 } from "@/components/ui/shadcn-io/kanban";
-import type { KanbanTransformedData } from "@/lib/canvas-transformers";
+import type { KanbanTransformedData } from "@/lib/types";
 
 const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",

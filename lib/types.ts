@@ -57,3 +57,59 @@ export type Attachment = {
   url: string;
   contentType: string;
 };
+
+// Canvas Types - Single Source of Truth
+export type FieldType = "id" | "number" | "text" | "textarea" | "json";
+
+export type Field = {
+  apiName: string;
+  label: string;
+  value?: string | number | boolean | Record<string, any> | any[] | null;
+  allowedValues: Array<string | number | boolean>;
+  type: FieldType;
+  isVisible: boolean;
+};
+
+export type CanvasData = Record<string, Field>[];
+
+// Kanban Types
+export type KanbanColumn = {
+  id: string;
+  name: string;
+  color?: string;
+};
+
+export type KanbanFeature = {
+  id: string;
+  name: string;
+  column: string;
+  [key: string]: any;
+};
+
+export type KanbanTransformedData = {
+  columns: KanbanColumn[];
+  features: KanbanFeature[];
+};
+
+// Table Types
+export type TableTransformedData<TData = any> = {
+  columns: any[]; // ColumnDef<TData>[] from shadcn table
+  data: TData[];
+};
+
+// Gantt Types
+export type GanttFeature = {
+  id: string;
+  name: string;
+  startAt: Date;
+  endAt: Date;
+  status?: { name: string; color: string };
+  owner?: { name: string; image: string };
+  group?: { id: string; name: string };
+  [key: string]: any;
+};
+
+export type GanttTransformedData = {
+  features: GanttFeature[];
+  groups: Record<string, GanttFeature[]>;
+};

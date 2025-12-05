@@ -9,7 +9,7 @@ import {
   TableProvider,
   TableRow,
 } from "@/components/ui/shadcn-io/table";
-import type { TableTransformedData } from "@/lib/canvas-transformers";
+import type { TableTransformedData } from "@/lib/types";
 
 type CanvasTableViewProps = {
   transformedData: TableTransformedData;
