@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { CanvasEditor } from "@/components/canvas-editor";
 import { Artifact } from "@/components/create-artifact";
 import { DocumentSkeleton } from "@/components/document-skeleton";
 import { CopyIcon, RedoIcon, UndoIcon } from "@/components/icons";
+import { useCanvas } from "./context";
 
 type Metadata = {
   viewMode: "canvas" | "json";
@@ -23,6 +25,21 @@ function CanvasArtifactContent({
   isLoading: boolean;
   isCurrentVersion: boolean;
 }) {
+  const { setCanvasData } = useCanvas();
+
+  useEffect(() => {
+    if (!content || content.trim() === "") {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(content);
+      setCanvasData(parsed);
+    } catch (error) {
+      console.error("Error parsing canvas content:", error);
+    }
+  }, [content, setCanvasData]);
+
   if (isLoading) {
     return <DocumentSkeleton artifactKind="canvas" />;
   }

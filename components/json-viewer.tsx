@@ -9,6 +9,14 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -22,6 +30,8 @@ type JsonViewerProps = {
   rootName?: string;
   defaultExpanded?: boolean;
   className?: string;
+  isEditable?: boolean;
+  onChange?: (newData: any) => void;
 };
 
 export function JsonViewer({
@@ -29,6 +39,8 @@ export function JsonViewer({
   rootName = "root",
   defaultExpanded = true,
   className,
+  isEditable = false,
+  onChange,
 }: JsonViewerProps) {
   return (
     <TooltipProvider>
@@ -36,8 +48,11 @@ export function JsonViewer({
         <JsonNode
           data={data}
           defaultExpanded={defaultExpanded}
+          isEditable={isEditable}
           isRoot={true}
           name={rootName}
+          onChange={onChange}
+          path={[]}
         />
       </div>
     </TooltipProvider>
@@ -50,6 +65,9 @@ type JsonNodeProps = {
   isRoot?: boolean;
   defaultExpanded?: boolean;
   level?: number;
+  isEditable?: boolean;
+  onChange?: (newData: any) => void;
+  path?: (string | number)[];
 };
 
 function JsonNode({
@@ -58,6 +76,9 @@ function JsonNode({
   isRoot = false,
   defaultExpanded = true,
   level = 0,
+  isEditable = false,
+  onChange,
+  path = [],
 }: JsonNodeProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isCopied, setIsCopied] = useState(false);
@@ -130,7 +151,17 @@ function JsonNode({
           )}
         </span>
 
-        {!isExpandable && <JsonValue data={data} />}
+        {!isExpandable && (
+          <JsonValue
+            data={data}
+            isEditable={isEditable}
+            onChange={(newValue) => {
+              if (onChange) {
+                onChange({ path, value: newValue });
+              }
+            }}
+          />
+        )}
 
         {!isExpandable && <div className="w-3.5" />}
 
@@ -154,9 +185,12 @@ function JsonNode({
             <JsonNode
               data={data[key]}
               defaultExpanded={level < 1}
+              isEditable={isEditable}
               key={key}
               level={level + 1}
               name={dataType === "array" ? `${key}` : key}
+              onChange={onChange}
+              path={[...path, dataType === "array" ? Number(key) : key]}
             />
           ))}
           <div className="py-1 pl-4 text-muted-foreground">
@@ -169,10 +203,52 @@ function JsonNode({
 }
 
 // Update the JsonValue function to make the entire row clickable with an expand icon
-function JsonValue({ data }: { data: any }) {
+function JsonValue({
+  data,
+  isEditable = false,
+  onChange,
+}: {
+  data: any;
+  isEditable?: boolean;
+  onChange?: (newValue: any) => void;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
   const dataType = typeof data;
   const TEXT_LIMIT = 80; // Character limit before truncation
+
+  const handleEdit = (e: React.MouseEvent) => {
+    if (!isEditable) {
+      return;
+    }
+    e.stopPropagation();
+    setIsEditing(true);
+    setEditValue(String(data));
+  };
+
+  const handleSave = () => {
+    if (!onChange) {
+      return;
+    }
+    let newValue: any = editValue;
+
+    // Try to parse to appropriate type
+    if (dataType === "number") {
+      newValue = Number(editValue);
+    }
+
+    onChange(newValue);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSave();
+    } else if (e.key === "Escape") {
+      setIsEditing(false);
+    }
+  };
 
   if (data === null) {
     return <span className="text-rose-500">null</span>;
@@ -188,6 +264,19 @@ function JsonValue({ data }: { data: any }) {
 
   switch (dataType) {
     case "string":
+      if (isEditing) {
+        return (
+          <Input
+            autoFocus
+            className="h-6 flex-1 text-emerald-500"
+            onBlur={handleSave}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            type="text"
+            value={editValue}
+          />
+        );
+      }
       if (data.length > TEXT_LIMIT) {
         return (
           <button
@@ -196,6 +285,7 @@ function JsonValue({ data }: { data: any }) {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
             }}
+            onDoubleClick={isEditable ? handleEdit : undefined}
             type="button"
           >
             {`"`}
@@ -227,11 +317,76 @@ function JsonValue({ data }: { data: any }) {
           </button>
         );
       }
-      return <span className="text-emerald-500">{`"${data}"`}</span>;
+      return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: Inline span needed for JSON display
+        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: Inline span needed for JSON display
+        <span
+          className={cn("text-emerald-500", isEditable && "cursor-pointer")}
+          onDoubleClick={isEditable ? handleEdit : undefined}
+          role={isEditable ? "button" : undefined}
+          tabIndex={isEditable ? 0 : undefined}
+        >
+          {`"${data}"`}
+        </span>
+      );
     case "number":
-      return <span className="text-amber-500">{data}</span>;
+      if (isEditing) {
+        return (
+          <Input
+            autoFocus
+            className="h-6 w-24 text-amber-500"
+            onBlur={handleSave}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            type="number"
+            value={editValue}
+          />
+        );
+      }
+      return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: Inline span needed for JSON display
+        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: Inline span needed for JSON display
+        <span
+          className="cursor-pointer text-amber-500"
+          onDoubleClick={isEditable ? handleEdit : undefined}
+          role={isEditable ? "button" : undefined}
+          tabIndex={isEditable ? 0 : undefined}
+        >
+          {data}
+        </span>
+      );
     case "boolean":
-      return <span className="text-blue-500">{data.toString()}</span>;
+      if (isEditing) {
+        return (
+          <Select
+            onValueChange={(value) => {
+              onChange?.(value === "true");
+              setIsEditing(false);
+            }}
+            value={String(data)}
+          >
+            <SelectTrigger className="h-6 w-24 text-blue-500">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">true</SelectItem>
+              <SelectItem value="false">false</SelectItem>
+            </SelectContent>
+          </Select>
+        );
+      }
+      return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: Inline span needed for JSON display
+        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: Inline span needed for JSON display
+        <span
+          className="cursor-pointer text-blue-500"
+          onDoubleClick={isEditable ? handleEdit : undefined}
+          role={isEditable ? "button" : undefined}
+          tabIndex={isEditable ? 0 : undefined}
+        >
+          {data.toString()}
+        </span>
+      );
     default:
       return <span>{String(data)}</span>;
   }

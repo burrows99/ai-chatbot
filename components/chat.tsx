@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
+import { CanvasProvider } from "@/artifacts/canvas/context";
 import { ChatHeader } from "@/components/chat-header";
 import {
   AlertDialog,
@@ -168,7 +169,7 @@ export function Chat({
   });
 
   return (
-    <>
+    <CanvasProvider>
       <div className="overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col bg-background">
         <ChatHeader
           chatId={id}
@@ -257,6 +258,6 @@ export function Chat({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </CanvasProvider>
   );
 }
