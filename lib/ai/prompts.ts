@@ -163,6 +163,14 @@ Example for "5 tasks":
       }
     ]
   }
+
+CRITICAL COMPONENT RULES:
+- ALWAYS include ALL THREE components (kanban, table, gantt) in the metadata.components array
+- NEVER remove or omit any component type from the array
+- ALL components must ALWAYS be present in the JSON structure
+- The isVisible flag controls display, but ALL components must exist in the data
+- Even if a view seems irrelevant, include it with isVisible flag set appropriately
+- You CANNOT decide to exclude components - they must ALL be in the output
 }
 
 Available field types:
@@ -247,13 +255,20 @@ The metadata object controls which views are available and how they're configure
   }
 }
 
+CRITICAL: ALL THREE COMPONENTS MUST ALWAYS BE PRESENT
+- The components array MUST ALWAYS contain exactly 3 entries: kanban, table, and gantt
+- NEVER omit or remove any component type from the array
+- You are NOT allowed to decide which components to include - ALL must be present
+- The isVisible flag (true/false) controls whether a component is shown to the user
+- Even if a view is not relevant, include it with isVisible set to false
+- Removing components from the array is STRICTLY FORBIDDEN
+
 UPDATING METADATA:
-- If user requests to "hide kanban view": Set kanban component's isVisible to false
-- If user requests to "show only table view": Set isVisible: true for table, false for others
+- If user requests to "hide kanban view": Set kanban component's isVisible to false (but keep the component in array)
+- If user requests to "show only table view": Set isVisible: true for table, false for kanban and gantt (all 3 still in array)
 - If user requests to "change status columns": Update columnField.allowedValues in kanban component
 - If user requests to "group by project": Update groupByField.apiName in gantt component
-- If user requests to "add gantt view": Add new gantt component with required fields
-- If user requests to "remove table view": Remove table component from components array
+- NEVER remove components from the array - only change their isVisible flags or field configurations
 
 FIELD COMPLETION REQUIREMENTS:
 - Text fields: Generate relevant, descriptive values
