@@ -1,4 +1,5 @@
 import { memo, useMemo, useState } from "react";
+import { DataTableView } from "@/components/canvas/data-table-view";
 import type { GanttTransformedData } from "@/components/canvas/gantt-view";
 import GanttView from "@/components/canvas/gantt-view";
 import type { KanbanTransformedData } from "@/components/canvas/kanban-view";
@@ -12,8 +13,10 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  type TableTransformedData,
   transformToGanttData,
   transformToKanbanData,
+  transformToTableData,
 } from "@/lib/artifacts/canvas/data-transformer";
 import type { CanvasData } from "@/lib/artifacts/canvas/types";
 
@@ -42,6 +45,32 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
       return null;
     }
   }, [content]);
+
+  const tableData = useMemo<TableTransformedData | null>(() => {
+    if (
+      !canvasData ||
+      !canvasData.metadata ||
+      !canvasData.metadata.components
+    ) {
+      return null;
+    }
+
+    try {
+      // Check if table component is visible
+      const tableComponent = canvasData.metadata.components.find(
+        (c) => c.type === "table"
+      );
+
+      if (!tableComponent || !tableComponent.isVisible) {
+        return null;
+      }
+
+      return transformToTableData(canvasData);
+    } catch (error) {
+      console.error("Error transforming table data:", error);
+      return null;
+    }
+  }, [canvasData]);
 
   const kanbanData = useMemo<KanbanTransformedData | null>(() => {
     if (
@@ -124,7 +153,7 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
         </TabsList>
 
         <TabsContent className="mt-0 flex-1 overflow-auto p-4" value="canvas">
-          {!kanbanData && !ganttData ? (
+          {!tableData && !kanbanData && !ganttData ? (
             <Card>
               <CardHeader>
                 <CardTitle>No Visualization Available</CardTitle>
@@ -135,6 +164,12 @@ export const CanvasEditor = memo(function CanvasEditorComponent({
             </Card>
           ) : (
             <div className="flex flex-col gap-4">
+              {tableData && (
+                <DataTableView
+                  columns={tableData.columns}
+                  data={tableData.data}
+                />
+              )}
               {kanbanData && (
                 <KanbanView
                   columns={kanbanData.columns}

@@ -136,9 +136,9 @@ const GanttView = ({ features, markers }: GanttViewProps) => {
       zoom={100}
     >
       <GanttSidebar>
-        {Object.entries(sortedGroupedFeatures).map(([group, features]) => (
+        {Object.entries(sortedGroupedFeatures).map(([group, groupFeatures]) => (
           <GanttSidebarGroup key={group} name={group}>
-            {features.map((feature) => (
+            {groupFeatures.map((feature) => (
               <GanttSidebarItem
                 feature={feature}
                 key={feature.id}
@@ -151,62 +151,70 @@ const GanttView = ({ features, markers }: GanttViewProps) => {
       <GanttTimeline>
         <GanttHeader />
         <GanttFeatureList>
-          {Object.entries(sortedGroupedFeatures).map(([group, features]) => (
-            <GanttFeatureListGroup key={group}>
-              {features.map((feature) => (
-                <div className="flex" key={feature.id}>
-                  <ContextMenu>
-                    <ContextMenuTrigger asChild>
-                      <button
-                        onClick={() => handleViewFeature(feature.id)}
-                        type="button"
-                      >
-                        <GanttFeatureItem
-                          onMove={handleMoveFeature}
-                          {...feature}
+          {Object.entries(sortedGroupedFeatures).map(
+            ([group, groupFeatures]) => (
+              <GanttFeatureListGroup key={group}>
+                {groupFeatures.map((feature) => (
+                  <div className="flex" key={feature.id}>
+                    <ContextMenu>
+                      <ContextMenuTrigger asChild>
+                        <button
+                          onClick={() => handleViewFeature(feature.id)}
+                          type="button"
                         >
-                          <p className="flex-1 truncate text-xs">
-                            {feature.name}
-                          </p>
-                          {feature.owner && (
-                            <Avatar className="h-4 w-4">
-                              <AvatarImage src={feature.owner.image} />
-                              <AvatarFallback>
-                                {feature.owner.name?.slice(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
-                        </GanttFeatureItem>
-                      </button>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent>
-                      <ContextMenuItem
-                        className="flex items-center gap-2"
-                        onClick={() => handleViewFeature(feature.id)}
-                      >
-                        <EyeIcon className="text-muted-foreground" size={16} />
-                        View feature
-                      </ContextMenuItem>
-                      <ContextMenuItem
-                        className="flex items-center gap-2"
-                        onClick={() => handleCopyLink(feature.id)}
-                      >
-                        <LinkIcon className="text-muted-foreground" size={16} />
-                        Copy link
-                      </ContextMenuItem>
-                      <ContextMenuItem
-                        className="flex items-center gap-2 text-destructive"
-                        onClick={() => handleRemoveFeature(feature.id)}
-                      >
-                        <TrashIcon size={16} />
-                        Remove from roadmap
-                      </ContextMenuItem>
-                    </ContextMenuContent>
-                  </ContextMenu>
-                </div>
-              ))}
-            </GanttFeatureListGroup>
-          ))}
+                          <GanttFeatureItem
+                            onMove={handleMoveFeature}
+                            {...feature}
+                          >
+                            <p className="flex-1 truncate text-xs">
+                              {feature.name}
+                            </p>
+                            {feature.owner && (
+                              <Avatar className="h-4 w-4">
+                                <AvatarImage src={feature.owner.image} />
+                                <AvatarFallback>
+                                  {feature.owner.name?.slice(0, 2)}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                          </GanttFeatureItem>
+                        </button>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent>
+                        <ContextMenuItem
+                          className="flex items-center gap-2"
+                          onClick={() => handleViewFeature(feature.id)}
+                        >
+                          <EyeIcon
+                            className="text-muted-foreground"
+                            size={16}
+                          />
+                          View feature
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          className="flex items-center gap-2"
+                          onClick={() => handleCopyLink(feature.id)}
+                        >
+                          <LinkIcon
+                            className="text-muted-foreground"
+                            size={16}
+                          />
+                          Copy link
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          className="flex items-center gap-2 text-destructive"
+                          onClick={() => handleRemoveFeature(feature.id)}
+                        >
+                          <TrashIcon size={16} />
+                          Remove from roadmap
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  </div>
+                ))}
+              </GanttFeatureListGroup>
+            )
+          )}
         </GanttFeatureList>
         {markers.map((marker) => (
           <GanttMarker

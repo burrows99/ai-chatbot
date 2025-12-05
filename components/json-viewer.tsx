@@ -89,14 +89,15 @@ function JsonNode({
     <div
       className={cn("group/object pl-4", level > 0 && "border-border border-l")}
     >
-      <button
+      {/** biome-ignore lint/a11y/noNoninteractiveElementInteractions: Interactive div for expandable JSON viewer */}
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: Interactive div for expandable JSON viewer */}
+      {/** biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard navigation handled by parent component */}
+      <div
         className={cn(
           "-ml-4 group/property flex cursor-pointer items-center gap-1 rounded px-1 py-1 hover:bg-muted/50",
           isRoot && "font-semibold text-primary"
         )}
-        disabled={!isExpandable}
         onClick={isExpandable ? handleToggle : undefined}
-        type="button"
       >
         {isExpandable ? (
           <div className="flex h-4 w-4 items-center justify-center">
@@ -145,7 +146,7 @@ function JsonNode({
             <Copy className="h-3.5 w-3.5 text-muted-foreground" />
           )}
         </button>
-      </button>
+      </div>
 
       {isExpandable && isExpanded && data !== null && data !== undefined && (
         <div className="pl-4">

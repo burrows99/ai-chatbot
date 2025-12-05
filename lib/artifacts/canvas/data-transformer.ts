@@ -1,3 +1,4 @@
+import type { ColumnDef } from "@tanstack/react-table";
 import type {
   GanttFeature,
   GanttGroup,
@@ -16,6 +17,11 @@ import type {
   GanttComponent,
   KanbanComponent,
 } from "./types";
+
+export type TableTransformedData = {
+  columns: ColumnDef<Record<string, string>, string>[];
+  data: Record<string, string>[];
+};
 
 const COLUMN_COLORS = [
   "#6B7280", // Gray
@@ -40,6 +46,99 @@ function getFieldValue(
 ): string | undefined {
   const field = record.fields.find((f) => f.apiName === apiName);
   return field?.value;
+}
+
+// Field mapping configuration for semantic field lookup
+const FIELD_MAPPINGS = {
+  name: ["title", "name", "subject"],
+  description: ["description", "notes", "details"],
+  priority: ["priority", "importance"],
+  dueDate: ["dueDate", "endDate", "targetDate"],
+  startDate: ["startDate", "createdDate"],
+  owner: ["assignee", "owner", "responsiblePerson"],
+  status: ["status", "state"],
+  milestone: ["milestone"],
+  milestoneName: ["milestoneName", "title", "name"],
+} as const;
+
+// Get the first matching field value from a list of possible field names
+function getFieldValueByMapping(
+  record: EntityRecord,
+  fieldNames: readonly string[]
+): string | undefined {
+  for (const fieldName of fieldNames) {
+    const value = getFieldValue(record, fieldName);
+    if (value) {
+      return value;
+    }
+  }
+  return;
+}
+
+// Collect all field API names that are used for specific purposes
+function getUsedFieldNames(
+  _record: EntityRecord,
+  ...additionalFields: string[]
+): Set<string> {
+  const usedFields = new Set<string>(additionalFields);
+
+  // Add all semantic mapping fields
+  for (const fieldNames of Object.values(FIELD_MAPPINGS)) {
+    for (const fieldName of fieldNames) {
+      usedFields.add(fieldName);
+    }
+  }
+
+  return usedFields;
+}
+
+export function transformToTableData(data: CanvasData): TableTransformedData {
+  if (!data.entityRecords || data.entityRecords.length === 0) {
+    return {
+      columns: [],
+      data: [],
+    };
+  }
+
+  // Collect all unique field names from all records
+  const fieldSet = new Set<string>();
+  const fieldLabels = new Map<string, string>();
+
+  for (const record of data.entityRecords) {
+    for (const field of record.fields) {
+      fieldSet.add(field.apiName);
+      // Use label if available, otherwise use apiName
+      if (!fieldLabels.has(field.apiName)) {
+        fieldLabels.set(field.apiName, field.label || field.apiName);
+      }
+    }
+  }
+
+  // Create columns from unique fields
+  const columns: ColumnDef<Record<string, string>, string>[] = Array.from(
+    fieldSet
+  ).map((apiName) => ({
+    accessorKey: apiName,
+    header: fieldLabels.get(apiName) || apiName,
+  }));
+
+  // Transform entity records into table rows
+  const tableData: Record<string, string>[] = data.entityRecords.map(
+    (record) => {
+      const row: Record<string, string> = {};
+
+      for (const field of record.fields) {
+        row[field.apiName] = field.value || "";
+      }
+
+      return row;
+    }
+  );
+
+  return {
+    columns,
+    data: tableData,
+  };
 }
 
 export function transformToKanbanData(data: CanvasData): KanbanTransformedData {
@@ -73,72 +172,35 @@ export function transformToKanbanData(data: CanvasData): KanbanTransformedData {
     const columnValue = getFieldValue(record, columnFieldApiName) || "";
     const columnId = columnMap.get(columnValue) || columns[0]?.id || "";
 
-    // Try to find a title/name field
+    // Use field mappings for semantic field lookup
     const nameField =
-      getFieldValue(record, "title") ||
-      getFieldValue(record, "name") ||
-      getFieldValue(record, "subject") ||
-      record.recordId;
+      getFieldValueByMapping(record, FIELD_MAPPINGS.name) || record.recordId;
 
-    // Try to find date fields for startAt/endAt
-    const dueDateStr =
-      getFieldValue(record, "dueDate") ||
-      getFieldValue(record, "endDate") ||
-      getFieldValue(record, "targetDate");
-
+    const dueDateStr = getFieldValueByMapping(record, FIELD_MAPPINGS.dueDate);
     const startDateStr =
-      getFieldValue(record, "startDate") ||
-      getFieldValue(record, "createdDate") ||
-      dueDateStr;
+      getFieldValueByMapping(record, FIELD_MAPPINGS.startDate) || dueDateStr;
 
     const startAt = startDateStr ? new Date(startDateStr) : new Date();
     const endAt = dueDateStr ? new Date(dueDateStr) : new Date();
 
-    // Try to find owner/assignee
     const ownerName =
-      getFieldValue(record, "assignee") ||
-      getFieldValue(record, "owner") ||
-      getFieldValue(record, "responsiblePerson") ||
-      "Unassigned";
+      getFieldValueByMapping(record, FIELD_MAPPINGS.owner) || "Unassigned";
 
-    // Try to find description
-    const description =
-      getFieldValue(record, "description") ||
-      getFieldValue(record, "notes") ||
-      getFieldValue(record, "details");
+    const description = getFieldValueByMapping(
+      record,
+      FIELD_MAPPINGS.description
+    );
 
-    // Try to find priority
-    const priority =
-      getFieldValue(record, "priority") || getFieldValue(record, "importance");
+    const priority = getFieldValueByMapping(record, FIELD_MAPPINGS.priority);
 
-    // Collect other metadata fields
+    // Collect other metadata fields, excluding known semantic fields
+    const usedFields = getUsedFieldNames(record, columnFieldApiName);
     const metadata: Record<string, string> = {};
-    record.fields.map((field) => {
-      const excludedFields = [
-        "title",
-        "name",
-        "subject",
-        "description",
-        "notes",
-        "details",
-        "priority",
-        "importance",
-        "dueDate",
-        "endDate",
-        "targetDate",
-        "startDate",
-        "createdDate",
-        "assignee",
-        "owner",
-        "responsiblePerson",
-        columnFieldApiName,
-      ];
-      if (!excludedFields.includes(field.apiName) && field.value) {
+    for (const field of record.fields) {
+      if (!usedFields.has(field.apiName) && field.value) {
         metadata[field.label || field.apiName] = field.value;
-        return;
       }
-      return;
-    });
+    }
 
     return {
       id: record.recordId,
@@ -204,25 +266,19 @@ export function transformToGanttData(data: CanvasData): GanttTransformedData {
   const releaseMap = new Map<string, { id: string; name: string }>();
 
   // Transform entity records into features
-  const features: GanttFeature[] = data.entityRecords.map((record, index) => {
-    // Get dates
+  const features: GanttFeature[] = data.entityRecords.map((record) => {
+    // Get dates from configured fields
     const startDateStr = getFieldValue(record, startDateFieldApiName);
     const endDateStr = getFieldValue(record, endDateFieldApiName);
     const startAt = startDateStr ? new Date(startDateStr) : new Date();
     const endAt = endDateStr ? new Date(endDateStr) : new Date();
 
-    // Get name
+    // Use field mappings for semantic field lookup
     const name =
-      getFieldValue(record, "title") ||
-      getFieldValue(record, "name") ||
-      getFieldValue(record, "subject") ||
-      record.recordId;
+      getFieldValueByMapping(record, FIELD_MAPPINGS.name) || record.recordId;
 
-    // Get status
     const statusName =
-      getFieldValue(record, "status") ||
-      getFieldValue(record, "state") ||
-      "To Do";
+      getFieldValueByMapping(record, FIELD_MAPPINGS.status) || "To Do";
     if (!statusMap.has(statusName)) {
       statusMap.set(statusName, {
         id: `status-${statusMap.size}`,
@@ -230,14 +286,13 @@ export function transformToGanttData(data: CanvasData): GanttTransformedData {
         color: STATUS_COLORS[statusMap.size % STATUS_COLORS.length],
       });
     }
-    const status = statusMap.get(statusName)!;
+    const status = statusMap.get(statusName);
+    if (!status) {
+      throw new Error(`Status not found for: ${statusName}`);
+    }
 
-    // Get owner
     const ownerName =
-      getFieldValue(record, "assignee") ||
-      getFieldValue(record, "owner") ||
-      getFieldValue(record, "responsiblePerson") ||
-      "Unassigned";
+      getFieldValueByMapping(record, FIELD_MAPPINGS.owner) || "Unassigned";
     if (!userMap.has(ownerName)) {
       userMap.set(ownerName, {
         id: ownerName.toLowerCase().replace(/\s+/g, "-"),
@@ -245,9 +300,12 @@ export function transformToGanttData(data: CanvasData): GanttTransformedData {
         image: generateAvatarUrl(ownerName),
       });
     }
-    const owner = userMap.get(ownerName)!;
+    const owner = userMap.get(ownerName);
+    if (!owner) {
+      throw new Error(`Owner not found for: ${ownerName}`);
+    }
 
-    // Get group
+    // Get group from configured field
     const groupName = getFieldValue(record, groupByFieldApiName) || "Default";
     if (!groupMap.has(groupName)) {
       groupMap.set(groupName, {
@@ -255,11 +313,14 @@ export function transformToGanttData(data: CanvasData): GanttTransformedData {
         name: groupName,
       });
     }
-    const group = groupMap.get(groupName)!;
+    const group = groupMap.get(groupName);
+    if (!group) {
+      throw new Error(`Group not found for: ${groupName}`);
+    }
 
     // Get optional fields
     const productName = getFieldValue(record, "product");
-    let product;
+    let product: { id: string; name: string } | undefined;
     if (productName) {
       if (!productMap.has(productName)) {
         productMap.set(productName, {
@@ -271,7 +332,7 @@ export function transformToGanttData(data: CanvasData): GanttTransformedData {
     }
 
     const initiativeName = getFieldValue(record, "initiative");
-    let initiative;
+    let initiative: { id: string; name: string } | undefined;
     if (initiativeName) {
       if (!initiativeMap.has(initiativeName)) {
         initiativeMap.set(initiativeName, {
@@ -283,7 +344,7 @@ export function transformToGanttData(data: CanvasData): GanttTransformedData {
     }
 
     const releaseName = getFieldValue(record, "release");
-    let release;
+    let release: { id: string; name: string } | undefined;
     if (releaseName) {
       if (!releaseMap.has(releaseName)) {
         releaseMap.set(releaseName, {
@@ -311,13 +372,16 @@ export function transformToGanttData(data: CanvasData): GanttTransformedData {
   // Generate markers from milestone fields
   const markers = data.entityRecords
     .map((record, index) => {
-      const milestoneDate = getFieldValue(record, "milestone");
-      if (!milestoneDate) return null;
+      const milestoneDate = getFieldValueByMapping(
+        record,
+        FIELD_MAPPINGS.milestone
+      );
+      if (!milestoneDate) {
+        return null;
+      }
 
       const milestoneName =
-        getFieldValue(record, "milestoneName") ||
-        getFieldValue(record, "title") ||
-        getFieldValue(record, "name") ||
+        getFieldValueByMapping(record, FIELD_MAPPINGS.milestoneName) ||
         "Milestone";
 
       return {
