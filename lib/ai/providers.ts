@@ -1,10 +1,10 @@
-import { createOllama } from "ollama-ai-provider-v2";
 import { createAzure } from "@ai-sdk/azure";
 import {
   customProvider,
   extractReasoningMiddleware,
   wrapLanguageModel,
 } from "ai";
+import { createOllama } from "ollama-ai-provider-v2";
 import { isTestEnvironment } from "../constants";
 
 const providerForTest = (() => {
@@ -50,7 +50,7 @@ const azureProvider = customProvider({
 });
 
 const ollama = createOllama({
-  baseURL: process.env.OLLAMA_BASE_URL,
+  baseURL: `${process.env.OLLAMA_BASE_URL}/api`,
 });
 
 const ollamaProvider = customProvider({
@@ -68,8 +68,9 @@ const ollamaProvider = customProvider({
   },
 });
 
-export const myProvider = isTestEnvironment ? providerForTest : 
-azureProvider;
-// ollamaProvider;
+export const myProvider = isTestEnvironment
+  ? providerForTest
+  : // azureProvider;
+    ollamaProvider;
 
 export const allProviders = [azureProvider, ollamaProvider];
